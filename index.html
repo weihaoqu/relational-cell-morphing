@@ -1,0 +1,1226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Insertion Sort Robustness Verification</title>
+<style>
+  :root {
+    --bg: #0d1117;
+    --surface: #161b22;
+    --surface2: #1c2128;
+    --border: #30363d;
+    --text: #e6edf3;
+    --text-dim: #8b949e;
+    --accent: #58a6ff;
+    --accent2: #3fb950;
+    --accent3: #d2a8ff;
+    --code-bg: #0d1117;
+    --tab-hover: #21262d;
+    --highlight: #1f6feb33;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+  }
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 24px 0 0;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .header-content {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 24px;
+  }
+  .header-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+  .header-sub {
+    color: var(--text-dim);
+    font-size: 0.875rem;
+    margin-bottom: 16px;
+  }
+  .tabs {
+    display: flex;
+    gap: 0;
+  }
+  .tab {
+    padding: 10px 20px;
+    cursor: pointer;
+    color: var(--text-dim);
+    font-size: 0.875rem;
+    font-weight: 500;
+    border-bottom: 2px solid transparent;
+    transition: color 0.15s, border-color 0.15s, background 0.15s;
+    user-select: none;
+    border-radius: 6px 6px 0 0;
+  }
+  .tab:hover {
+    color: var(--text);
+    background: var(--tab-hover);
+  }
+  .tab.active {
+    color: var(--text);
+    border-bottom-color: var(--accent);
+  }
+  .tab .tab-icon { margin-right: 6px; }
+
+  main {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 32px 24px 80px;
+  }
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  /* Markdown-rendered content */
+  .content h1 { font-size: 1.75rem; margin: 32px 0 16px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+  .content h1:first-child { margin-top: 0; }
+  .content h2 { font-size: 1.375rem; margin: 28px 0 12px; padding-bottom: 6px; border-bottom: 1px solid var(--border); color: var(--accent); }
+  .content h3 { font-size: 1.1rem; margin: 20px 0 8px; color: var(--accent3); }
+  .content h4 { font-size: 1rem; margin: 16px 0 8px; color: var(--text-dim); }
+  .content p { margin: 12px 0; }
+  .content strong { color: #f0f6fc; }
+  .content blockquote {
+    border-left: 3px solid var(--accent);
+    padding: 8px 16px;
+    margin: 12px 0;
+    background: var(--surface);
+    border-radius: 0 6px 6px 0;
+    color: var(--text-dim);
+  }
+  .content ul, .content ol { margin: 8px 0 8px 24px; }
+  .content li { margin: 4px 0; }
+  .content hr { border: none; border-top: 1px solid var(--border); margin: 24px 0; }
+  .content a { color: var(--accent); text-decoration: none; }
+  .content a:hover { text-decoration: underline; }
+  .content table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 0.875rem;
+  }
+  .content table th {
+    text-align: left;
+    padding: 10px 14px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    font-weight: 600;
+    color: var(--accent);
+  }
+  .content table td {
+    padding: 8px 14px;
+    border: 1px solid var(--border);
+  }
+  .content table tr:hover td {
+    background: var(--surface);
+  }
+  .content code {
+    font-family: 'SF Mono', 'Fira Code', 'Fira Mono', Menlo, Consolas, monospace;
+    background: var(--surface2);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.85em;
+    color: var(--accent3);
+  }
+  .content pre {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px 20px;
+    overflow-x: auto;
+    margin: 16px 0;
+    position: relative;
+  }
+  .content pre code {
+    background: none;
+    padding: 0;
+    border-radius: 0;
+    font-size: 0.8125rem;
+    color: var(--text);
+    line-height: 1.5;
+  }
+
+  /* Source code panel */
+  .source-container {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .source-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 16px;
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+    font-size: 0.8125rem;
+    color: var(--text-dim);
+  }
+  .source-filename {
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    color: var(--text);
+    font-weight: 500;
+  }
+  .source-lines {
+    display: flex;
+    overflow-x: auto;
+    font-family: 'SF Mono', 'Fira Code', Menlo, Consolas, monospace;
+    font-size: 0.8125rem;
+    line-height: 1.6;
+  }
+  .line-numbers {
+    padding: 16px 0;
+    text-align: right;
+    color: var(--text-dim);
+    user-select: none;
+    min-width: 48px;
+    opacity: 0.5;
+    border-right: 1px solid var(--border);
+  }
+  .line-numbers span {
+    display: block;
+    padding: 0 12px;
+  }
+  .source-code {
+    padding: 16px;
+    flex: 1;
+    white-space: pre;
+    color: var(--text);
+  }
+  .source-code .comment { color: #8b949e; font-style: italic; }
+  .source-code .keyword { color: #ff7b72; }
+  .source-code .predicate { color: #79c0ff; }
+  .source-code .operator { color: #d2a8ff; }
+  .source-code .bool { color: #3fb950; }
+  .source-code .number { color: #f2cc60; }
+
+  /* Copy button */
+  .copy-btn {
+    background: var(--surface);
+    color: var(--text-dim);
+    border: 1px solid var(--border);
+    padding: 4px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.75rem;
+    transition: all 0.15s;
+  }
+  .copy-btn:hover { color: var(--text); background: var(--tab-hover); }
+
+  /* Info boxes */
+  .info-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    border-radius: 0 6px 6px 0;
+    padding: 16px 20px;
+    margin: 20px 0;
+  }
+  .info-box.success { border-left-color: var(--accent2); }
+  .info-box.purple { border-left-color: var(--accent3); }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .tab { padding: 8px 12px; font-size: 0.8rem; }
+    main { padding: 20px 16px 60px; }
+    .header-title { font-size: 1.25rem; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-content">
+    <div class="header-title">Insertion Sort Robustness Verification</div>
+    <div class="header-sub">Relational Cell Morphing with PCSAT &mdash; 1-Robustness Proof</div>
+    <div class="tabs">
+      <div class="tab active" data-panel="simple" onclick="switchTab(this)">
+        <span class="tab-icon">&#128196;</span>Overview
+      </div>
+      <div class="tab" data-panel="detailed" onclick="switchTab(this)">
+        <span class="tab-icon">&#128214;</span>Detailed Tutorial
+      </div>
+      <div class="tab" data-panel="source" onclick="switchTab(this)">
+        <span class="tab-icon">&#128187;</span>Source Code
+      </div>
+    </div>
+  </div>
+</header>
+
+<main>
+  <!-- ============ SIMPLE / OVERVIEW PANEL ============ -->
+  <div id="panel-simple" class="panel active content">
+    <h1>Insertion Sort Robustness Verification with PCSAT</h1>
+    <p>A concise tutorial on verifying 1-robustness using relational cell morphing.</p>
+    <hr>
+
+    <h2>The Algorithm</h2>
+<pre><code>Insertion-Sort(A : arr)
+   i = 1                              // outer loop starts at 1
+   while i &lt; n:
+       key = A[i]                     // save element to insert
+       j = i - 1
+       while j &gt;= 0 and A[j] &gt; key:   // inner loop: shift larger elements
+           A[j+1] = A[j]              // shift right
+           j -= 1
+       A[j+1] = key                   // insert key at correct position
+       i += 1</code></pre>
+    <p><strong>Key observation</strong>: Values are <strong>moved</strong>, never <strong>modified arithmetically</strong>. The value <code>5</code> stays <code>5</code> &mdash; it only changes position.</p>
+    <hr>
+
+    <h2>The Property: 1-Robustness</h2>
+<pre><code>&forall;k. |A1[k] - A2[k]| &le; &epsilon;  &rArr;  &forall;k. |A1'[k] - A2'[k]| &le; &epsilon;
+     ~~~~~~~~~~~~~~~~         ~~~~~~~~~~~~~~~~~~~~
+     INPUT arrays             OUTPUT arrays (sorted)</code></pre>
+    <p><strong>In plain English</strong>: If two input arrays have elements differing by at most &epsilon;, the sorted outputs also differ by at most &epsilon; per element.</p>
+    <p><strong>Why "1-robust"?</strong> The bound stays <strong>constant</strong> (&epsilon;) regardless of array size &mdash; because values are preserved, not accumulated.</p>
+    <hr>
+
+    <h2>The Solution: Relational Cell Morphing</h2>
+    <h3>The Problem</h3>
+    <p>We need to verify a property about <strong>all array indices</strong>, but CHC solvers can't handle quantified array properties directly.</p>
+
+    <h3>The Solution: One Distinguished Cell</h3>
+    <p>Instead of tracking the entire array, we track <strong>one symbolic cell</strong>:</p>
+<pre><code>&boxdr;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxdr;
+&boxv;  ARRAY A                                                    &boxv;
+&boxv;                                                             &boxv;
+&boxv;  Index:   0      1      2      k      4      5     ...     &boxv;
+&boxv;          +------+------+------+------+------+------+       &boxv;
+&boxv;  A1:     |  ?   |  ?   |  ?   | ak1  |  ?   |  ?   |       &boxv;
+&boxv;          +------+------+------+------+------+------+       &boxv;
+&boxv;          +------+------+------+------+------+------+       &boxv;
+&boxv;  A2:     |  ?   |  ?   |  ?   | ak2  |  ?   |  ?   |       &boxv;
+&boxv;          +------+------+------+------+------+------+       &boxv;
+&boxv;                              &uarr;                              &boxv;
+&boxv;                    Distinguished Cell k                     &boxv;
+&boxv;                    We track: ak1, ak2                       &boxv;
+&boxv;                    We know: |ak1 - ak2| &le; &epsilon;                 &boxv;
+&boxdr;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxdr;</code></pre>
+    <p><strong>Key insight</strong>: <code>k</code> is <strong>symbolic</strong> (universally quantified). If we prove the property for arbitrary <code>k</code>, it holds for ALL indices!</p>
+    <hr>
+
+    <h2>State Variables</h2>
+<pre><code>Inv(i1, i2, j1, j2, key1, key2, n1, n2, k, ak1, ak2, bk:bool, b1:bool, b2:bool, eps)</code></pre>
+    <table>
+      <thead>
+        <tr><th>Variable</th><th>Meaning</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>i1, i2</code></td><td>Outer loop index (which element to insert)</td></tr>
+        <tr><td><code>j1, j2</code></td><td>Inner loop index (current shift position)</td></tr>
+        <tr><td><code>key1, key2</code></td><td>The value being inserted</td></tr>
+        <tr><td><code>b1, b2</code></td><td>Loop phase: <code>false</code> = outer head, <code>true</code> = inner loop</td></tr>
+        <tr><td><code>k</code></td><td>Distinguished index (symbolic, universally quantified)</td></tr>
+        <tr><td><code>ak1, ak2</code></td><td>Values A1[k], A2[k] at distinguished cell</td></tr>
+        <tr><td><code>bk</code></td><td>Sign bit: <code>true</code> &rArr; ak2 &ge; ak1</td></tr>
+        <tr><td><code>eps</code></td><td>Perturbation bound (&epsilon; &ge; 0)</td></tr>
+      </tbody>
+    </table>
+    <hr>
+
+    <h2>The HIT/MISS Abstraction</h2>
+    <p>When accessing array index <code>j</code>:</p>
+    <table>
+      <thead>
+        <tr><th>Case</th><th>Condition</th><th>What We Know</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>HIT</strong></td><td><code>j = k</code></td><td>Accessing distinguished cell &rarr; use exact value <code>ak1</code></td></tr>
+        <tr><td><strong>MISS</strong></td><td><code>j &ne; k</code></td><td>Accessing other cell &rarr; value unknown, non-deterministic</td></tr>
+      </tbody>
+    </table>
+    <h3>For Array Operations</h3>
+<pre><code>Reading A[j]:
+  &bull; HIT (j = k):   value = ak1  (exact!)
+  &bull; MISS (j &ne; k):  value = ?    (unknown)
+
+Writing v to A[j]:
+  &bull; HIT (j = k):   ak1' = v     (cell updated)
+  &bull; MISS (j &ne; k):  ak1' = ak1   (cell unchanged)
+
+Comparing A[j] &gt; key:
+  &bull; HIT (j = k):   ak1 &gt; key    (can evaluate!)
+  &bull; MISS (j &ne; k):  unknown      (either branch possible)</code></pre>
+    <hr>
+
+    <h2>Why 1-Robust Works</h2>
+    <div class="info-box success">
+      <strong>THE 1-ROBUSTNESS INSIGHT</strong><br><br>
+      <strong>INVARIANT:</strong> <code>ak1' = ak1</code> (almost always!)<br><br>
+      The value at the distinguished cell <strong>never changes arithmetically</strong>. It can only be:
+      <ol style="margin:8px 0 8px 24px">
+        <li>Read (unchanged)</li>
+        <li>Moved to another position (but ak1 stays)</li>
+        <li>Replaced by key (which was also from the input)</li>
+      </ol>
+      Since values don't change, the &epsilon; bound is preserved!<br><br>
+      <code>INPUT: |ak1 - ak2| &le; &epsilon;</code> &rarr; <code>OUTPUT: |ak1 - ak2| &le; &epsilon;</code> (same bound!)
+    </div>
+    <p>Compare to N-robust algorithms where values <strong>accumulate</strong>:</p>
+<pre><code>Kruskal:        c1' = c1 + wk1     (costs grow!)
+Dijkstra:       dv1' = dv1 + edge  (distances grow!)
+Insertion Sort: ak1' = ak1         (values preserved!)</code></pre>
+    <hr>
+
+    <h2>Verification Results</h2>
+    <table>
+      <thead>
+        <tr><th>Goal Clause</th><th>Result</th><th>Time</th><th>Meaning</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>ak1 - ak2 &le; eps and ak2 - ak1 &le; eps</code></td><td><strong>SAT</strong></td><td>~14s</td><td>Bound CAN be satisfied &check;</td></tr>
+        <tr><td><code>ak1 - ak2 &gt; eps or ak2 - ak1 &gt; eps</code></td><td><strong>UNSAT</strong></td><td>~17min</td><td>Bound CANNOT be violated &check;</td></tr>
+        <tr><td><code>ak1 = ak2</code></td><td><strong>UNSAT</strong></td><td>~13min</td><td>Exact equality too strong &check;</td></tr>
+      </tbody>
+    </table>
+
+    <div class="info-box success">
+      <strong>VERIFICATION COMPLETE</strong><br><br>
+      <strong>Property:</strong> 1-Robustness of Insertion Sort<br>
+      <strong>Statement:</strong> &forall;k. |A1[k] - A2[k]| &le; &epsilon; &rArr; &forall;k. |A1'[k] - A2'[k]| &le; &epsilon;<br>
+      <strong>Result:</strong> VERIFIED &check;<br>
+      <strong>Evidence:</strong> Violation query returns UNSAT (no counterexample exists)
+    </div>
+    <hr>
+
+    <h2>Key Takeaways</h2>
+    <ol>
+      <li><strong>Relational Cell Morphing</strong>: Track one symbolic cell <code>k</code> instead of entire array. Since <code>k</code> is universally quantified, the proof holds for all indices.</li>
+      <li><strong>HIT/MISS Abstraction</strong>: HIT (access k) &rarr; use exact value; MISS (access &ne;k) &rarr; non-deterministic.</li>
+      <li><strong>1-Robust Insight</strong>: Values are preserved (<code>ak1' = ak1</code>), so the &epsilon; bound is maintained throughout execution.</li>
+      <li><strong>PCSAT Goal Interpretation</strong>: Positive property SAT &rarr; achievable &check;; Violation UNSAT &rarr; verified &check;</li>
+    </ol>
+    <hr>
+
+    <h2>Comparison: 1-Robust vs N-Robust</h2>
+    <table>
+      <thead>
+        <tr><th>Aspect</th><th>Insertion Sort (1-robust)</th><th>Kruskal / Dijkstra (N-robust)</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Values</td><td>Preserved (<code>ak1' = ak1</code>)</td><td>Accumulate (<code>c1' = c1 + w</code>)</td></tr>
+        <tr><td>Invariant</td><td><code>|ak1 - ak2| &le; &epsilon;</code></td><td><code>|c1 - c2| &le; i&middot;&epsilon;</code></td></tr>
+        <tr><td>Final bound</td><td>&epsilon; (constant)</td><td>N&middot;&epsilon; (grows with size)</td></tr>
+        <tr><td>HIT case</td><td>Know exact value</td><td>Know exact contribution</td></tr>
+        <tr><td>MISS case</td><td>Non-deterministic comparison</td><td>Unknown weight, bounded by &epsilon;</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ============ DETAILED TUTORIAL PANEL ============ -->
+  <div id="panel-detailed" class="panel content">
+    <h1>Insertion Sort Robustness Verification using PCSAT</h1>
+    <h3>A Complete Tutorial on Relational Cell Morphing</h3>
+    <hr>
+
+    <h2>Overview</h2>
+    <p>This document explains how to verify that <strong>Insertion Sort</strong> is <strong>1-robust</strong> using <strong>PCSAT</strong> (a solver for predicate constraint satisfaction problems) with the <strong>relational cell morphing</strong> technique.</p>
+    <h3>What You Will Learn</h3>
+    <ul>
+      <li>How to encode array-manipulating algorithms for robustness verification</li>
+      <li>The relational cell morphing technique for avoiding quantified array reasoning</li>
+      <li>The HIT/MISS abstraction for tracking array accesses</li>
+      <li>How to interpret PCSAT verification results</li>
+    </ul>
+    <h3>Prerequisites</h3>
+    <ul>
+      <li>Basic understanding of insertion sort algorithm</li>
+      <li>Familiarity with loop invariants</li>
+      <li>Basic knowledge of formal verification concepts</li>
+    </ul>
+    <hr>
+
+    <h2>The Algorithm</h2>
+<pre><code>Insertion-Sort(A : arr)
+   i = 1                              // outer loop starts at 1 (index 0 is trivially sorted)
+   while i &lt; n:
+       key = A[i]                     // save the element to insert
+       j = i - 1
+       while j &gt;= 0 and A[j] &gt; key:   // inner loop: shift larger elements right
+           A[j+1] = A[j]              // shift element right
+           j -= 1
+       A[j+1] = key                   // insert key at correct position
+       i += 1</code></pre>
+
+    <h3>Algorithm Visualization</h3>
+<pre><code>Initial:  [5, 2, 8, 1, 9]
+Step 1:   [2, 5, 8, 1, 9]    // Insert 2: shift 5 right, place 2
+Step 2:   [2, 5, 8, 1, 9]    // Insert 8: already in place
+Step 3:   [1, 2, 5, 8, 9]    // Insert 1: shift all, place 1 at front
+Step 4:   [1, 2, 5, 8, 9]    // Insert 9: already in place
+Final:    [1, 2, 5, 8, 9]    // Sorted!</code></pre>
+
+    <h3>Key Observation</h3>
+    <p><strong>Values are MOVED, never MODIFIED arithmetically.</strong> The value <code>5</code> stays <code>5</code> throughout &mdash; it only changes position. This is the key insight that makes insertion sort <strong>1-robust</strong> (not N-robust like graph algorithms).</p>
+    <hr>
+
+    <h2>The Property: 1-Robustness</h2>
+    <h3>Formal Definition</h3>
+<pre><code>&forall;k. |A1[k] - A2[k]| &le; &epsilon;  &rArr;  &forall;k. |A1'[k] - A2'[k]| &le; &epsilon;
+     ~~~~~~~~~~~~~~~~         ~~~~~~~~~~~~~~~~~~~~
+     INPUT arrays             OUTPUT arrays (sorted)</code></pre>
+
+    <h3>In Plain English</h3>
+    <blockquote>If two input arrays have corresponding elements that differ by at most &epsilon;, then after sorting, the output arrays will also have corresponding elements that differ by at most &epsilon;.</blockquote>
+
+    <h3>Example</h3>
+<pre><code>Input A1:  [5.0, 2.0, 8.0, 1.0]
+Input A2:  [5.1, 1.9, 8.05, 1.1]    // Each element differs by at most 0.1
+
+After sorting:
+
+Output A1': [1.0, 2.0, 5.0, 8.0]
+Output A2': [1.1, 1.9, 5.1, 8.05]   // Still differs by at most 0.1 &check;</code></pre>
+
+    <h3>Why "1-Robust"?</h3>
+    <p>The bound stays <strong>constant</strong> (1 &times; &epsilon; = &epsilon;) regardless of array size.</p>
+    <table>
+      <thead><tr><th>Algorithm</th><th>Robustness</th><th>Final Bound</th></tr></thead>
+      <tbody>
+        <tr><td>Insertion Sort</td><td>1-robust</td><td>&epsilon;</td></tr>
+        <tr><td>Dijkstra</td><td>N-robust</td><td>N&middot;&epsilon;</td></tr>
+        <tr><td>Kruskal MST</td><td>(N-1)-robust</td><td>(N-1)&middot;&epsilon;</td></tr>
+      </tbody>
+    </table>
+    <hr>
+
+    <h2>The Challenge: Array Reasoning</h2>
+    <h3>The Problem</h3>
+    <p>To verify 1-robustness, we need to prove: <code>&forall;k. |A1'[k] - A2'[k]| &le; &epsilon;</code></p>
+    <p>This requires reasoning about <strong>all array indices simultaneously</strong>.</p>
+    <p><strong>But CHC (Constrained Horn Clauses) solvers cannot handle quantified array properties directly!</strong></p>
+
+    <h3>Why Arrays Are Hard</h3>
+<pre><code>// We want to verify this for ALL k:
+forall k: 0 &le; k &lt; n ==&gt; |A1[k] - A2[k]| &le; eps
+
+// But we can't enumerate all k (n could be unbounded)
+// And we can't use array theories in standard CHC solvers</code></pre>
+
+    <h3>Traditional Approaches (and their limitations)</h3>
+    <ol>
+      <li><strong>Enumerate all indices</strong>: Only works for fixed, small n</li>
+      <li><strong>Array theories</strong>: Not supported by many CHC solvers</li>
+      <li><strong>Abstract interpretation</strong>: May lose precision</li>
+    </ol>
+    <hr>
+
+    <h2>The Solution: Relational Cell Morphing</h2>
+    <h3>The Key Idea</h3>
+    <p>Instead of tracking the <strong>entire array</strong>, we track <strong>one symbolic cell</strong>:</p>
+<pre><code>+-------------------------------------------------------------+
+|  ARRAY A                                                    |
+|                                                             |
+|  Index:   0      1      2      k      4      5     ...     |
+|          +------+------+------+------+------+------+       |
+|  A1:     |  ?   |  ?   |  ?   | ak1  |  ?   |  ?   |       |
+|          +------+------+------+------+------+------+       |
+|          +------+------+------+------+------+------+       |
+|  A2:     |  ?   |  ?   |  ?   | ak2  |  ?   |  ?   |       |
+|          +------+------+------+------+------+------+       |
+|                              &uarr;                              |
+|                    Distinguished Cell k                     |
+|                                                             |
+|  We track: ak1 (value A1[k]) and ak2 (value A2[k])         |
+|  We know:  |ak1 - ak2| &le; &epsilon;                                  |
+|  All other cells: unknown (represented as ?)                |
++-------------------------------------------------------------+</code></pre>
+
+    <h3>The Universal Quantification Trick</h3>
+    <p><strong><code>k</code> is symbolic (universally quantified)</strong></p>
+    <ul>
+      <li>We don't assign <code>k</code> a specific value like 0, 1, 2...</li>
+      <li>Instead, <code>k</code> represents an <strong>arbitrary</strong> valid index</li>
+      <li>If we prove the property holds for this arbitrary <code>k</code>, it holds for <strong>ALL</strong> indices!</li>
+    </ul>
+<pre><code>Proof structure:
+1. Pick arbitrary k where 0 &le; k &lt; n
+2. Track A1[k] and A2[k] through execution
+3. Prove |A1'[k] - A2'[k]| &le; &epsilon; at termination
+4. Since k was arbitrary, this holds for all indices &forall;k. QED</code></pre>
+    <hr>
+
+    <h2>State Variables</h2>
+<pre><code>Inv(i1, i2, j1, j2, key1, key2, n1, n2, k, ak1, ak2, bk:bool, b1:bool, b2:bool, eps)</code></pre>
+
+    <h3>Control Flow Variables</h3>
+    <table>
+      <thead><tr><th>Variable</th><th>Type</th><th>Meaning</th></tr></thead>
+      <tbody>
+        <tr><td><code>i1, i2</code></td><td>int</td><td>Outer loop index (which element to insert)</td></tr>
+        <tr><td><code>j1, j2</code></td><td>int</td><td>Inner loop index (current shift position)</td></tr>
+        <tr><td><code>key1, key2</code></td><td>real</td><td>The value being inserted (saved from A[i])</td></tr>
+        <tr><td><code>b1, b2</code></td><td>bool</td><td>Loop phase: <code>false</code> = outer head, <code>true</code> = inner loop</td></tr>
+        <tr><td><code>n1, n2</code></td><td>int</td><td>Array sizes (must be equal)</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Distinguished Cell Variables</h3>
+    <table>
+      <thead><tr><th>Variable</th><th>Type</th><th>Meaning</th></tr></thead>
+      <tbody>
+        <tr><td><code>k</code></td><td>int</td><td>Distinguished index (symbolic, universally quantified)</td></tr>
+        <tr><td><code>ak1</code></td><td>real</td><td>Value A1[k] in run 1</td></tr>
+        <tr><td><code>ak2</code></td><td>real</td><td>Value A2[k] in run 2</td></tr>
+        <tr><td><code>bk</code></td><td>bool</td><td>Sign bit: <code>true</code> &rArr; ak2 &ge; ak1, <code>false</code> &rArr; ak1 &gt; ak2</td></tr>
+        <tr><td><code>eps</code></td><td>real</td><td>Perturbation bound (&epsilon; &ge; 0)</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Why Two Runs?</h3>
+    <p>We verify a <strong>relational property</strong> comparing two executions:</p>
+    <ul>
+      <li><strong>Run 1</strong>: Sorts array A1</li>
+      <li><strong>Run 2</strong>: Sorts array A2</li>
+    </ul>
+    <p>The scheduler (SchTF, SchFT, SchTT) controls which run(s) take steps.</p>
+    <hr>
+
+    <h2>The PCSAT Encoding</h2>
+
+    <h3>Encoding Structure Overview</h3>
+    <div class="info-box purple">
+<pre style="border:none;margin:0;padding:0;background:transparent"><code>PCSAT CLAUSE STRUCTURE
+
+1. INITIALIZATION
+   Inv(...) :- initial_conditions.
+
+2. TRANSITIONS (TF, FT, TT)
+   Inv(updated) :-
+       Inv(current),
+       Scheduler(...),
+       (case1) or (case2) or ... ,
+       epsilon_bound.
+
+3. FAIRNESS CONSTRAINTS
+   Ensure both runs can make progress
+
+4. SCHEDULER DISJUNCTION
+   At least one scheduler active when progress possible
+
+5. GOAL CLAUSE
+   Check if violation is reachable</code></pre>
+    </div>
+
+    <h3>Initialization</h3>
+<pre><code>Inv(i1, i2, j1, j2, key1, key2, n1, n2, k, ak1, ak2, bk:bool, b1:bool, b2:bool, eps) :-
+  i1 = 0, i2 = 0,           (* Outer loop starts at index 0 *)
+  j1 = -1, j2 = -1,         (* j = -1 indicates "not in inner loop" *)
+  n1 &gt; 0, n1 = n2,          (* Valid arrays of equal size *)
+  0 &le; k, k &lt; n1,           (* k is a valid index *)
+  !b1, !b2,                 (* Both runs start at outer loop head *)
+  0 &le; eps,                 (* Non-negative perturbation bound *)
+  (* INPUT PRECONDITION: |ak1 - ak2| &le; eps *)
+  (bk and 0 &le; ak2 - ak1 and ak2 - ak1 &le; eps) or
+  (!bk and 0 &le; ak1 - ak2 and ak1 - ak2 &le; eps).</code></pre>
+
+    <h4>Explanation</h4>
+    <p><strong>Initial state</strong>:</p>
+    <ul>
+      <li>Both runs at the start of the algorithm (<code>i = 0</code>, not in inner loop)</li>
+      <li><code>k</code> is declared but not assigned &rarr; it's symbolic (arbitrary)</li>
+      <li><code>ak1, ak2</code> satisfy the input assumption: <code>|ak1 - ak2| &le; &epsilon;</code></li>
+    </ul>
+    <p><strong>The sign bit <code>bk</code></strong>: Since we can't write <code>|ak1 - ak2| &le; eps</code> directly in linear arithmetic, we use:</p>
+<pre><code>bk = true:  ak2 &ge; ak1, so |ak1 - ak2| = ak2 - ak1
+bk = false: ak1 &gt; ak2, so |ak1 - ak2| = ak1 - ak2</code></pre>
+    <hr>
+
+    <h3>TF Transition (Run 1 Steps)</h3>
+    <p>This is the most detailed transition. Only <strong>Run 1</strong> takes a step while Run 2 waits.</p>
+<pre><code>Inv(i1', i2, j1', j2, key1', key2, n1, n2, k, ak1', ak2, bk:bool, b1':bool, b2:bool, eps) :-
+  Inv(i1, i2, j1, j2, key1, key2, n1, n2, k, ak1, ak2, bk:bool, b1:bool, b2:bool, eps),
+  SchTF(i1, i2, j1, j2, key1, key2, n1, n2, k, ak1, ak2, bk:bool, b1:bool, b2:bool, eps),
+  (
+    (* Case 1: Outer loop - read key *)
+    ...
+  ) or (
+    (* Case 2: Inner loop body - shift *)
+    ...
+  ) or (
+    (* Case 3: Inner loop exit - write key *)
+    ...
+  ) or (
+    (* Case 4: Outer loop increment *)
+    ...
+  ) or (
+    (* Case 5: Finished *)
+    ...
+  ),
+  (* Maintain epsilon bound *)
+  (bk and 0 &le; ak2 - ak1' and ak2 - ak1' &le; eps) or
+  (!bk and 0 &le; ak1' - ak2 and ak1' - ak2 &le; eps).</code></pre>
+
+    <h4>Case 1: Outer Loop &mdash; Read Key</h4>
+    <p><strong>Code</strong>: <code>key = A[i]</code></p>
+<pre><code>!b1 and i1 &lt; n1 and i1' = i1 and j1' = i1 - 1 and b1' and
+(i1 = k and key1' = ak1 or i1 &lt;&gt; k) and
+ak1' = ak1</code></pre>
+    <table>
+      <thead><tr><th>Condition</th><th>What Happens</th><th>Result</th></tr></thead>
+      <tbody>
+        <tr><td><code>i1 = k</code> (HIT)</td><td>Reading distinguished cell</td><td><code>key1' = ak1</code> (exact value known)</td></tr>
+        <tr><td><code>i1 &lt;&gt; k</code> (MISS)</td><td>Reading other cell</td><td><code>key1'</code> unconstrained (unknown)</td></tr>
+      </tbody>
+    </table>
+    <p><strong>Critical</strong>: <code>ak1' = ak1</code> &mdash; reading doesn't change the value!</p>
+
+    <h4>Case 2: Inner Loop Body &mdash; Shift</h4>
+    <p><strong>Code</strong>: <code>A[j+1] = A[j]; j--</code></p>
+    <p>This is the most complex case. We READ from <code>A[j]</code> and WRITE to <code>A[j+1]</code>:</p>
+    <div class="info-box">
+      <strong>Case: j = k (READ HIT)</strong><br>
+      We're reading the distinguished cell!
+      <ul>
+        <li>We KNOW the value is ak1</li>
+        <li>The comparison <code>ak1 &gt; key1</code> must be true (else no shift)</li>
+        <li>Write target:
+          <ul>
+            <li>j+1 = k: Writing ak1 to distinguished cell &rarr; <code>ak1' = ak1</code> &check;</li>
+            <li>j+1 &ne; k: Writing elsewhere &rarr; <code>ak1' = ak1</code> &check;</li>
+          </ul>
+        </li>
+      </ul>
+      <br>
+      <strong>Case: j &ne; k (READ MISS)</strong><br>
+      Reading unknown value, comparison is non-deterministic.<br>
+      Either way: <code>ak1' = ak1</code> (distinguished cell unchanged) &check;
+    </div>
+    <p><strong>Key insight</strong>: Even when we write TO the distinguished cell (<code>j+1 = k</code>), we're writing <code>ak1</code> (from <code>j = k</code>), so <code>ak1' = ak1</code>!</p>
+
+    <h4>Case 3: Inner Loop Exit &mdash; Write Key</h4>
+    <p><strong>Code</strong>: <code>A[j+1] = key</code></p>
+    <table>
+      <thead><tr><th>Condition</th><th>What Happens</th><th>Result</th></tr></thead>
+      <tbody>
+        <tr><td><code>j1 + 1 = k</code> (HIT)</td><td>Writing TO distinguished cell</td><td><code>ak1' = key1</code></td></tr>
+        <tr><td><code>j1 + 1 &lt;&gt; k</code> (MISS)</td><td>Writing elsewhere</td><td><code>ak1' = ak1</code></td></tr>
+      </tbody>
+    </table>
+    <p><strong>This is where <code>ak1</code> can change!</strong> But the bound is maintained because <code>key1</code> came from the input array where all values satisfy the &epsilon; bound.</p>
+
+    <h4>Cases 4 &amp; 5: Increment and Finished</h4>
+    <p>Simple cases with no array access: <code>ak1' = ak1</code> always.</p>
+
+    <h4>The Epsilon Bound Clause</h4>
+    <p>Every transition ends with:</p>
+<pre><code>(bk and 0 &le; ak2 - ak1' and ak2 - ak1' &le; eps) or
+(!bk and 0 &le; ak1' - ak2 and ak1' - ak2 &le; eps)</code></pre>
+    <p>This enforces: <code>|ak1' - ak2| &le; eps</code></p>
+    <p><strong>Note</strong>: We use <code>ak2</code> (not <code>ak2'</code>) because in TF, only run 1 steps!</p>
+    <hr>
+
+    <h3>FT Transition (Run 2 Steps)</h3>
+    <p>Symmetric to TF, but only Run 2 steps. Uses <code>ak2'</code> and <code>ak1</code> in the epsilon bound.</p>
+    <hr>
+
+    <h3>TT Transition (Both Step)</h3>
+    <p>Both runs step simultaneously. Uses both <code>ak1'</code> and <code>ak2'</code> in the epsilon bound.</p>
+    <hr>
+
+    <h3>Scheduler Clauses</h3>
+    <h4>Fairness Constraints</h4>
+<pre><code>(* If TF is chosen and run 2 can progress, run 1 must be able to progress *)
+i1 &lt; n1 or b1 or j1 &ge; 0 :-
+  Inv(...),
+  SchTF(...),
+  i2 &lt; n2 or b2 or j2 &ge; 0.
+
+(* Symmetric for FT *)
+i2 &lt; n2 or b2 or j2 &ge; 0 :-
+  Inv(...),
+  SchFT(...),
+  i1 &lt; n1 or b1 or j1 &ge; 0.</code></pre>
+
+    <h4>Scheduler Disjunction</h4>
+<pre><code>(* At least one scheduler must be active when progress is possible *)
+SchTF(...), SchFT(...), SchTT(...) :-
+  Inv(...),
+  (i1 &lt; n1 or b1 or j1 &ge; 0) or (i2 &lt; n2 or b2 or j2 &ge; 0).</code></pre>
+    <p><strong>Note</strong>: This is a <strong>non-Horn clause</strong> (multiple atoms in the head). This makes the problem pfwCSP rather than standard CHC.</p>
+    <hr>
+
+    <h3>Goal Clause</h3>
+<pre><code>(* Check if violation is reachable at termination *)
+ak1 - ak2 &gt; eps or ak2 - ak1 &gt; eps :-
+  Inv(i1, i2, j1, j2, key1, key2, n1, n2, k, ak1, ak2, bk:bool, b1:bool, b2:bool, eps),
+  n1 &le; i1, n2 &le; i2, !b1, !b2.</code></pre>
+    <p><strong>Meaning</strong>: At termination (both loops finished), is <code>|ak1 - ak2| &gt; eps</code> possible?</p>
+    <ul>
+      <li><strong>UNSAT</strong>: No! Violation unreachable &rarr; <strong>Property verified!</strong></li>
+      <li><strong>SAT</strong>: Yes, violation is possible &rarr; Property does NOT hold</li>
+    </ul>
+    <hr>
+
+    <h2>The HIT/MISS Abstraction</h2>
+    <h3>Core Concept</h3>
+    <table>
+      <thead><tr><th>Case</th><th>Condition</th><th>What We Know</th><th>How We Handle It</th></tr></thead>
+      <tbody>
+        <tr><td><strong>HIT</strong></td><td><code>j = k</code></td><td>Accessing distinguished cell</td><td>Use exact value <code>ak1</code></td></tr>
+        <tr><td><strong>MISS</strong></td><td><code>j &ne; k</code></td><td>Accessing other cell</td><td>Value unknown, use non-determinism</td></tr>
+      </tbody>
+    </table>
+    <div class="info-box">
+      <strong>HIT/MISS ABSTRACTION</strong><br><br>
+      <code>Array A: [ ? | ? | ? | ak1 | ? | ? | ? ]</code><br>
+      <span style="margin-left:120px">&uarr; index k (distinguished)</span><br><br>
+      <strong>ACCESS at index j:</strong><br>
+      <code>j = k</code> (HIT) &rarr; We know: value = ak1, comparison evaluable, write updates ak1<br>
+      <code>j &ne; k</code> (MISS) &rarr; Unknown: value = ?, comparison non-deterministic, write leaves ak1 unchanged<br><br>
+      This abstraction is <strong>SOUND</strong>: we consider all possibilities<br>
+      This abstraction is <strong>COMPLETE</strong>: for the distinguished cell k
+    </div>
+    <hr>
+
+    <h2>Why 1-Robust Works</h2>
+    <h3>The Key Invariant</h3>
+    <p><code>ak1' = ak1</code> (almost always!)</p>
+    <p>The value at the distinguished cell <strong>never changes arithmetically</strong>. It can only be:</p>
+    <ol>
+      <li><strong>Read</strong>: unchanged (<code>ak1' = ak1</code>)</li>
+      <li><strong>Shifted</strong>: value moves, but if it's the distinguished cell, it's still <code>ak1</code></li>
+      <li><strong>Replaced by key</strong>: <code>ak1' = key1</code>, but <code>key1</code> was also from the input array</li>
+    </ol>
+
+    <div class="info-box success">
+      <strong>THE 1-ROBUSTNESS INSIGHT</strong><br><br>
+      <strong>INPUT:</strong> <code>|ak1 - ak2| &le; &epsilon;</code> (given as precondition)<br><br>
+      <strong>DURING EXECUTION:</strong>
+      <ul>
+        <li>Values only MOVE between positions</li>
+        <li>Values are never MODIFIED (no arithmetic operations)</li>
+        <li>When ak1 changes, it becomes key1 (from another input cell)</li>
+        <li>All input cells satisfy the &epsilon; bound</li>
+      </ul>
+      <br>
+      <strong>OUTPUT:</strong> <code>|ak1 - ak2| &le; &epsilon;</code> (same bound!)<br><br>
+      The bound is CONSTANT because values are PRESERVED!
+    </div>
+
+    <h3>Contrast with N-Robust Algorithms</h3>
+    <table>
+      <thead><tr><th>Algorithm</th><th>Operation</th><th>Value Change</th><th>Bound Growth</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Insertion Sort</strong></td><td>Move/copy</td><td><code>ak1' = ak1</code></td><td>Constant: &epsilon;</td></tr>
+        <tr><td><strong>Kruskal MST</strong></td><td>Accumulate</td><td><code>c1' = c1 + w</code></td><td>Linear: (N-1)&middot;&epsilon;</td></tr>
+        <tr><td><strong>Dijkstra</strong></td><td>Accumulate</td><td><code>d1' = d1 + w</code></td><td>Linear: N&middot;&epsilon;</td></tr>
+      </tbody>
+    </table>
+    <hr>
+
+    <h2>Verification Results</h2>
+    <h3>Running the Verification</h3>
+<pre><code>pcsat insertion_sort_robust.clp</code></pre>
+
+    <h3>Test Results</h3>
+    <table>
+      <thead><tr><th>Goal Clause</th><th>Result</th><th>Time</th><th>Interpretation</th></tr></thead>
+      <tbody>
+        <tr><td><code>ak1 - ak2 &le; eps and ak2 - ak1 &le; eps</code></td><td><strong>SAT</strong></td><td>~14s</td><td>Bound CAN be satisfied &check;</td></tr>
+        <tr><td><code>ak1 - ak2 &gt; eps or ak2 - ak1 &gt; eps</code></td><td><strong>UNSAT</strong></td><td>~17min</td><td>Bound CANNOT be violated &check;</td></tr>
+        <tr><td><code>ak1 = ak2</code></td><td><strong>UNSAT</strong></td><td>~13min</td><td>Exact equality too strong &check;</td></tr>
+      </tbody>
+    </table>
+
+    <h4>SAT for Positive Property</h4>
+<pre><code>Goal: ak1 - ak2 &le; eps and ak2 - ak1 &le; eps
+Result: SAT
+
+Meaning: "There EXISTS a reachable terminal state where |ak1 - ak2| &le; &epsilon;"
+         &rarr; Yes! The algorithm can successfully maintain the bound.
+         &rarr; This is EXPECTED for a correct algorithm.</code></pre>
+
+    <h4>UNSAT for Violation</h4>
+<pre><code>Goal: ak1 - ak2 &gt; eps or ak2 - ak1 &gt; eps
+Result: UNSAT
+
+Meaning: "There is NO reachable terminal state where |ak1 - ak2| &gt; &epsilon;"
+         &rarr; The bound can NEVER be violated!
+         &rarr; This PROVES 1-ROBUSTNESS! &check;</code></pre>
+
+    <h4>UNSAT for Exact Equality</h4>
+<pre><code>Goal: ak1 = ak2
+Result: UNSAT
+
+Meaning: "Exact equality is not guaranteed"
+         &rarr; Correct! We only guarantee bounded difference, not equality.
+         &rarr; This confirms our property is tight (not too strong).</code></pre>
+
+    <div class="info-box success">
+      <strong>VERIFICATION COMPLETE</strong><br><br>
+      <strong>Property:</strong> 1-Robustness of Insertion Sort<br>
+      <strong>Statement:</strong> &forall;k. |A1[k] - A2[k]| &le; &epsilon; &rArr; &forall;k. |A1'[k] - A2'[k]| &le; &epsilon;<br>
+      <strong>Result:</strong> VERIFIED &check;<br>
+      <strong>Evidence:</strong> Violation query returns UNSAT (no counterexample exists)
+    </div>
+    <hr>
+
+    <h2>Comparison with N-Robust Algorithms</h2>
+    <h3>Property Comparison</h3>
+    <table>
+      <thead><tr><th>Aspect</th><th>Insertion Sort</th><th>Dijkstra</th><th>Kruskal MST</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Type</strong></td><td>1-robust</td><td>N-robust</td><td>(N-1)-robust</td></tr>
+        <tr><td><strong>Values</strong></td><td>Preserved (move only)</td><td>Accumulate</td><td>Accumulate</td></tr>
+        <tr><td><strong>Key insight</strong></td><td><code>ak1' = ak1</code></td><td><code>|d1'-d2'| &le; |d1-d2|+&epsilon;</code></td><td><code>|c1'-c2'| &le; |c1-c2|+&epsilon;</code></td></tr>
+        <tr><td><strong>Invariant</strong></td><td><code>|ak1-ak2| &le; &epsilon;</code></td><td><code>|d1-d2| &le; i&middot;&epsilon;</code></td><td><code>|c1-c2| &le; i&middot;&epsilon;</code></td></tr>
+        <tr><td><strong>Final bound</strong></td><td>&epsilon;</td><td>N&middot;&epsilon;</td><td>(N-1)&middot;&epsilon;</td></tr>
+      </tbody>
+    </table>
+
+    <h3>When to Use Each Pattern</h3>
+<pre><code>Decision tree:
+
+Does the algorithm modify values arithmetically?
++-- NO (only moves/copies values)
+|   +-- 1-ROBUST pattern (like Insertion Sort)
+|       &bull; Invariant: |ak1 - ak2| &le; &epsilon;
+|       &bull; Key insight: ak1' = ak1
+|
++-- YES (computes new values)
+    +-- N-ROBUST pattern (like Dijkstra, Kruskal)
+        &bull; Invariant: |output1 - output2| &le; i&middot;&epsilon;
+        &bull; Key insight: each step adds &le; &epsilon; to difference</code></pre>
+    <hr>
+
+    <h2>Key Takeaways</h2>
+    <ol>
+      <li><strong>Relational Cell Morphing</strong>: Track one symbolic cell instead of entire array. <code>k</code> is universally quantified &mdash; proof holds for all indices. Reduces unbounded array reasoning to finite state.</li>
+      <li><strong>HIT/MISS Abstraction</strong>: HIT (access k) &rarr; use exact value <code>ak1</code>; MISS (access &ne;k) &rarr; value unknown, use non-determinism. Sound and complete for the distinguished cell.</li>
+      <li><strong>1-Robust vs N-Robust</strong>: 1-robust: values preserved (<code>ak1' = ak1</code>); N-robust: values accumulate (<code>c1' = c1 + w</code>). Choose based on whether algorithm modifies values arithmetically.</li>
+      <li><strong>PCSAT Encoding Structure</strong>:
+<pre><code>Inv(updated) :-
+    Inv(current),
+    Scheduler(...),
+    (case1) or (case2) or ...,
+    epsilon_bound.    &larr; SEPARATE clause at end!</code></pre>
+      </li>
+      <li><strong>Verification Interpretation</strong>:
+        <table>
+          <thead><tr><th>Goal</th><th>Result</th><th>Meaning</th></tr></thead>
+          <tbody>
+            <tr><td>Property holds</td><td>SAT</td><td>Property is achievable &check;</td></tr>
+            <tr><td>Violation</td><td>UNSAT</td><td>Property is verified &check;</td></tr>
+            <tr><td>Stronger property</td><td>UNSAT</td><td>Too strong (expected)</td></tr>
+          </tbody>
+        </table>
+      </li>
+      <li><strong>PCSAT Syntax Notes</strong>:
+        <ul>
+          <li>Use <code>and</code>, <code>or</code> inside compound expressions (not <code>;</code>)</li>
+          <li>Use <code>,</code> between top-level predicates</li>
+          <li>Use <code>!b</code> for boolean negation</li>
+          <li>Use <code>&lt;&gt;</code> for not-equal</li>
+          <li><strong>Cannot write <code>bk' = bk</code></strong> for boolean variables!</li>
+        </ul>
+      </li>
+    </ol>
+    <hr>
+
+    <h2>References</h2>
+    <ol>
+      <li><strong>Chaudhuri, Gulwani, Lublinerman</strong> &mdash; "Continuity and Robustness of Programs" (CACM 2012)</li>
+      <li><strong>Monniaux &amp; Gonnord</strong> &mdash; "Cell Morphing: From Array Programs to Array-Free Horn Clauses" (SAS 2016)</li>
+      <li><strong>Unno, Terauchi, Kobayashi</strong> &mdash; "Constraint-based Relational Verification" (CAV 2021)</li>
+      <li><strong>PCSAT Solver</strong> &mdash; Tool for solving predicate constraint satisfaction problems</li>
+    </ol>
+  </div>
+
+  <!-- ============ SOURCE CODE PANEL ============ -->
+  <div id="panel-source" class="panel">
+    <div class="source-container">
+      <div class="source-header">
+        <span class="source-filename">robustisort.clp</span>
+        <button class="copy-btn" onclick="copySource()">Copy to clipboard</button>
+      </div>
+      <div class="source-lines">
+        <div class="line-numbers" id="line-nums"></div>
+        <div class="source-code" id="source-code"></div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script>
+// Tab switching
+function switchTab(el) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('panel-' + el.dataset.panel).classList.add('active');
+}
+
+// Source code content
+const sourceCode = `
+(*
+Insertion-Sort(A : arr)
+   i = 1  // outer starts at 1 (0 sorted)
+while i < n:
+    key = A[i]
+    j = i - 1
+    while j >= 0 and A[j] > key:  // inner shift
+        A[j+1] = A[j]
+        j -= 1
+    A[j+1] = key
+    i += 1
+*)
+
+(*
+
+i1,i2 : outer loop indices in runs 1 and 2.
+
+k : distinguished index.
+
+ak1,ak2 : values of A1[k], A2[k].
+
+bk : Boolean sign bit as above.
+
+b = false: at outer head, run 1 either starts a new inner loop or finishes the outer loop.
+b = true : inside inner loop, run 1 either does a body step (write+j--) or exits the inner loop.
+
+eps : non\u2011negative real bound.
+
+N : array length (can be added later; not strictly needed in init).
+*)
+
+
+
+Inv(i1, i2, j1, j2, key1, key2, n1, n2, k, ak1, ak2, bk:bool, b1:bool, b2:bool, eps) :-
+  i1 = 0, i2 = 0,
+  j1 = -1, j2 = -1,  (* Start with j invalid (not in inner loop) *)
+  n1 > 0, n1 = n2,
+  0 <= k, k < n1,
+  !b1, !b2,
+  0 <= eps,
+  (bk and 0 <= ak2 - ak1 and ak2 - ak1 <= eps) or
+  (!bk and 0 <= ak1 - ak2 and ak1 - ak2 <= eps).
+
+
+Inv(i1', i2, j1', j2, key1', key2, n1, n2, k, ak1', ak2, bk:bool, b1':bool, b2:bool, eps) :-
+  Inv(i1, i2, j1, j2, key1, key2, n1, n2, k, ak1, ak2, bk:bool, b1:bool, b2:bool, eps),
+  SchTF(i1, i2, j1, j2, key1, key2, n1, n2, k, ak1, ak2, bk:bool, b1:bool, b2:bool, eps),
+  (
+    (* Outer loop: read key *)
+    !b1 and i1 < n1 and i1' = i1 and j1' = i1 - 1 and b1' and
+    (i1 = k and key1' = ak1 or i1 <> k ) and  (* Miss: key1' is fresh/unknown *)
+    ak1' = ak1  (* Distinguished cell never changes *)
+  ) or (
+    (* Inner loop body: shift *)
+    b1 and j1 >= 0 and i1' = i1 and j1' = j1 - 1 and b1' and
+    (* Read A[j1] *)
+    (j1 = k and
+      (* Hit case: we know A[j1] = ak1 *)
+      ak1 > key1 and
+      (j1 + 1 = k and ak1' = ak1 or j1 + 1 <> k and ak1' = ak1)  (* Write: ak1' = ak1 always *)
+     or j1 <> k and
+      (* Miss case: A[j1] is unknown, comparison is non-deterministic *)
+      (* Comparison can go either way *)
+      ak1' = ak1  (* Distinguished cell doesn't change *)
+    ) and
+    key1' = key1
+  ) or (
+    (* Inner loop exit: write key *)
+    b1 and i1' = i1 and !b1' and j1' = j1 and
+    (j1 < 0 or
+     j1 = k and ak1 <= key1 or
+     j1 <> k ) and  (* Miss: comparison unknown *)
+    (j1 + 1 = k and ak1' = key1 or j1 + 1 <> k and ak1' = ak1) and
+    key1' = key1
+  ) or (
+    (* Outer loop increment *)
+    !b1 and i1 < n1 and i1' = i1 + 1 and !b1' and j1' = -1 and
+    ak1' = ak1 and key1' = key1
+  ) or (
+    (* Finished *)
+    !b1 and i1 >= n1 and i1' = i1 and !b1' and j1' = j1 and
+    ak1' = ak1 and key1' = key1
+  ),
+  (* Maintain epsilon bound *)
+  (bk and 0 <= ak2 - ak1' and ak2 - ak1' <= eps) or
+  (!bk and 0 <= ak1' - ak2 and ak1' - ak2 <= eps).
+
+(* FT transition - only run 2 steps *)
+Inv(i1, i2', j1, j2', key1, key2', n1, n2, k, ak1, ak2', bk:bool, b1:bool, b2':bool, eps) :-
+  Inv(i1, i2, j1, j2, key1, key2, n1, n2, k, ak1, ak2, bk:bool, b1:bool, b2:bool, eps),
+  SchFT(i1, i2, j1, j2, key1, key2, n1, n2, k, ak1, ak2, bk:bool, b1:bool, b2:bool, eps),
+  (
+    (* Outer loop: read key *)
+    !b2 and i2 < n2 and i2' = i2 and j2' = i2 - 1 and b2' and
+    (i2 = k and key2' = ak2 or i2 <> k ) and
+    ak2' = ak2
+  ) or (
+    (* Inner loop body: shift *)
+    b2 and j2 >= 0 and i2' = i2 and j2' = j2 - 1 and b2' and
+    (j2 = k and
+      ak2 > key2 and
+      (j2 + 1 = k and ak2' = ak2 or j2 + 1 <> k and ak2' = ak2)
+     or j2 <> k and
+      ak2' = ak2
+    ) and
+    key2' = key2
+  ) or (
+    (* Inner loop exit: write key *)
+    b2 and i2' = i2 and !b2' and j2' = j2 and
+    (j2 < 0 or
+     j2 = k and ak2 <= key2 or
+     j2 <> k) and
+    (j2 + 1 = k and ak2' = key2 or j2 + 1 <> k and ak2' = ak2) and
+    key2' = key2
+  ) or (
+    (* Outer loop increment *)
+    !b2 and i2 < n2 and i2' = i2 + 1 and !b2' and j2' = -1 and
+    ak2' = ak2 and key2' = key2
+  ) or (
+    (* Finished *)
+    !b2 and i2 >= n2 and i2' = i2 and !b2' and j2' = j2 and
+    ak2' = ak2 and key2' = key2
+  ),
+  (* Maintain epsilon bound *)
+  (bk and 0 <= ak2' - ak1 and ak2' - ak1 <= eps) or
+  (!bk and 0 <= ak1 - ak2' and ak1 - ak2' <= eps).
+
+(* TT transition - both runs step *)
+Inv(i1', i2', j1', j2', key1', key2', n1, n2, k, ak1', ak2', bk:bool, b1':bool, b2':bool, eps) :-
+  Inv(i1, i2, j1, j2, key1, key2, n1, n2, k, ak1, ak2, bk:bool, b1:bool, b2:bool, eps),
+  SchTT(i1, i2, j1, j2, key1, key2, n1, n2, k, ak1, ak2, bk:bool, b1:bool, b2:bool, eps),
+  (* Run 1 transition *)
+  (
+    !b1 and i1 < n1 and i1' = i1 and j1' = i1 - 1 and b1' and
+    (i1 = k and key1' = ak1 or i1 <> k ) and
+    ak1' = ak1
+  ) or (
+    b1 and j1 >= 0 and i1' = i1 and j1' = j1 - 1 and b1' and
+    (j1 = k and ak1 > key1 and (j1 + 1 = k and ak1' = ak1 or j1 + 1 <> k and ak1' = ak1)
+     or j1 <> k   and ak1' = ak1) and
+    key1' = key1
+  ) or (
+    b1 and i1' = i1 and !b1' and j1' = j1 and
+    (j1 < 0 or j1 = k and ak1 <= key1 or j1 <> k ) and
+    (j1 + 1 = k and ak1' = key1 or j1 + 1 <> k and ak1' = ak1) and
+    key1' = key1
+  ) or (
+    !b1 and i1 < n1 and i1' = i1 + 1 and !b1' and j1' = -1 and
+    ak1' = ak1 and key1' = key1
+  ) or (
+    !b1 and i1 >= n1 and i1' = i1 and !b1' and j1' = j1 and
+    ak1' = ak1 and key1' = key1
+  ),
+  (* Run 2 transition *)
+  (
+    !b2 and i2 < n2 and i2' = i2 and j2' = i2 - 1 and b2' and
+    (i2 = k and key2' = ak2 or i2 <> k ) and
+    ak2' = ak2
+  ) or (
+    b2 and j2 >= 0 and i2' = i2 and j2' = j2 - 1 and b2' and
+    (j2 = k and ak2 > key2 and (j2 + 1 = k and ak2' = ak2 or j2 + 1 <> k and ak2' = ak2)
+     or j2 <> k  and ak2' = ak2) and
+    key2' = key2
+  ) or (
+    b2 and i2' = i2 and !b2' and j2' = j2 and
+    (j2 < 0 or j2 = k and ak2 <= key2 or j2 <> k) and
+    (j2 + 1 = k and ak2' = key2 or j2 + 1 <> k and ak2' = ak2) and
+    key2' = key2
+  ) or (
+    !b2 and i2 < n2 and i2' = i2 + 1 and !b2' and j2' = -1 and
+    ak2' = ak2 and key2' = key2
+  ) or (
+    !b2 and i2 >= n2 and i2' = i2 and !b2' and j2' = j2 and
+    ak2' = ak2 and key2' = key2
+  ),
+  (* Maintain epsilon bound *)
+  (bk and 0 <= ak2' - ak1' and ak2' - ak1' <= eps) or
+  (!bk and 0 <= ak1' - ak2' and ak1' - ak2' <= eps).
+
+(* Fairness constraint 1 *)
+i1 < n1 or b1 or j1 >= 0 :-
+  Inv(i1, i2, j1, j2, key1, key2, n1, n2, k, ak1, ak2, bk:bool, b1:bool, b2:bool, eps),
+  SchTF(i1, i2, j1, j2, key1, key2, n1, n2, k, ak1, ak2, bk:bool, b1:bool, b2:bool, eps),
+  i2 < n2 or b2 or j2 >= 0.
+
+(* Fairness constraint 2 *)
+i2 < n2 or b2 or j2 >= 0 :-
+  Inv(i1, i2, j1, j2, key1, key2, n1, n2, k, ak1, ak2, bk:bool, b1:bool, b2:bool, eps),
+  SchFT(i1, i2, j1, j2, key1, key2, n1, n2, k, ak1, ak2, bk:bool, b1:bool, b2:bool, eps),
+  i1 < n1 or b1 or j1 >= 0.
+
+(* Scheduler disjunction *)
+SchTF(i1, i2, j1, j2, key1, key2, n1, n2, k, ak1, ak2, bk:bool, b1:bool, b2:bool, eps),
+SchFT(i1, i2, j1, j2, key1, key2, n1, n2, k, ak1, ak2, bk:bool, b1:bool, b2:bool, eps),
+SchTT(i1, i2, j1, j2, key1, key2, n1, n2, k, ak1, ak2, bk:bool, b1:bool, b2:bool, eps) :-
+  Inv(i1, i2, j1, j2, key1, key2, n1, n2, k, ak1, ak2, bk:bool, b1:bool, b2:bool, eps),
+  (i1 < n1 or b1 or j1 >= 0) or (i2 < n2 or b2 or j2 >= 0).
+
+ak1 - ak2 <= eps and ak2 - ak1 <= eps    :-
+  Inv(i1, i2, j1,j2 ,key1, key2, n1, n2, k, ak1, ak2, bk:bool, b1:bool,b2:bool, eps),
+  n1<=i1, n2<=i2, !b1, !b2.`.trim();
+
+// Render source with line numbers and syntax highlighting
+function renderSource() {
+  const lines = sourceCode.split('\n');
+  const numEl = document.getElementById('line-nums');
+  const codeEl = document.getElementById('source-code');
+
+  let numsHtml = '';
+  let codeHtml = '';
+
+  lines.forEach((line, i) => {
+    numsHtml += '<span>' + (i + 1) + '</span>';
+    codeHtml += highlightLine(escapeHtml(line)) + '\n';
+  });
+
+  numEl.innerHTML = numsHtml;
+  codeEl.innerHTML = codeHtml;
+}
+
+function escapeHtml(s) {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+function highlightLine(line) {
+  // Comments
+  line = line.replace(/(\(\*.*?\*\))/g, '<span class="comment">$1</span>');
+  line = line.replace(/(\/\/.*$)/g, '<span class="comment">$1</span>');
+
+  // Predicates
+  line = line.replace(/\b(Inv|SchTF|SchFT|SchTT)\b/g, '<span class="predicate">$1</span>');
+
+  // Keywords
+  line = line.replace(/\b(and|or|not)\b/g, '<span class="keyword">$1</span>');
+  line = line.replace(/(:-)/g, '<span class="keyword">$1</span>');
+
+  // Booleans and types
+  line = line.replace(/\b(bool|true|false)\b/g, '<span class="bool">$1</span>');
+
+  // Operators
+  line = line.replace(/(&lt;=|&gt;=|&lt;&gt;|&lt;|&gt;)/g, '<span class="operator">$1</span>');
+
+  return line;
+}
+
+function copySource() {
+  navigator.clipboard.writeText(sourceCode).then(() => {
+    const btn = document.querySelector('.copy-btn');
+    btn.textContent = 'Copied!';
+    setTimeout(() => btn.textContent = 'Copy to clipboard', 2000);
+  });
+}
+
+// Initialize
+renderSource();
+</script>
+
+</body>
+</html>
