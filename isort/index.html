@@ -230,6 +230,24 @@
   .info-box.success { border-left-color: var(--accent2); }
   .info-box.purple { border-left-color: var(--accent3); }
 
+  /* Top navigation */
+  .topnav { border-bottom: 1px solid var(--border); font-size: 0.8rem; }
+  .topnav-content {
+    max-width: 1100px; margin: 0 auto; padding: 0 24px;
+    display: flex; align-items: center; gap: 4px; overflow-x: auto;
+  }
+  .topnav-home {
+    color: var(--accent); text-decoration: none; font-weight: 500;
+    padding: 8px 0; white-space: nowrap; margin-right: 8px;
+  }
+  .topnav-home:hover { text-decoration: underline; }
+  .topnav-link {
+    color: var(--text-dim); text-decoration: none; padding: 6px 10px;
+    border-radius: 4px; white-space: nowrap; transition: color 0.15s, background 0.15s;
+  }
+  .topnav-link:hover { color: var(--text); background: var(--surface2); }
+  .topnav-link.active { color: var(--text); background: var(--surface2); font-weight: 600; }
+
   /* Responsive */
   @media (max-width: 768px) {
     .tab { padding: 8px 12px; font-size: 0.8rem; }
@@ -241,6 +259,16 @@
 <body>
 
 <header>
+  <div class="topnav">
+    <div class="topnav-content">
+      <a href="../" class="topnav-home">&larr; All Examples</a>
+      <a href="../isort/" class="topnav-link active">Insertion Sort</a>
+      <a href="../kruskal/" class="topnav-link">Kruskal</a>
+      <a href="../dijk/" class="topnav-link">Dijkstra</a>
+      <a href="../histogram/" class="topnav-link">Histogram</a>
+      <a href="../cdf/" class="topnav-link">CDF</a>
+    </div>
+  </div>
   <div class="header-content">
     <div class="header-title">Insertion Sort Robustness Verification</div>
     <div class="header-sub">Relational Cell Morphing with PCSAT &mdash; 1-Robustness Proof</div>
