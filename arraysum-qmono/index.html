@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ArraySum Quantitative Monotonicity Verification</title>
+<style>
+  :root {
+    --bg: #ffffff;
+    --surface: #f6f8fa;
+    --surface2: #eef1f5;
+    --border: #d1d9e0;
+    --text: #1f2328;
+    --text-dim: #656d76;
+    --accent: #0969da;
+    --accent2: #1a7f37;
+    --accent3: #8250df;
+    --code-bg: #f6f8fa;
+    --tab-hover: #eef1f5;
+    --highlight: #0969da1a;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+  }
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 24px 0 0;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .header-content {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 24px;
+  }
+  .header-title { font-size: 1.5rem; font-weight: 600; margin-bottom: 4px; }
+  .header-sub { color: var(--text-dim); font-size: 0.875rem; margin-bottom: 16px; }
+  .tabs { display: flex; gap: 0; }
+  .tab {
+    padding: 10px 20px; cursor: pointer; color: var(--text-dim);
+    font-size: 0.875rem; font-weight: 500;
+    border-bottom: 2px solid transparent;
+    transition: color 0.15s, border-color 0.15s, background 0.15s;
+    user-select: none; border-radius: 6px 6px 0 0;
+  }
+  .tab:hover { color: var(--text); background: var(--tab-hover); }
+  .tab.active { color: var(--text); border-bottom-color: var(--accent2); }
+  .tab .tab-icon { margin-right: 6px; }
+  main { max-width: 1100px; margin: 0 auto; padding: 32px 24px 80px; }
+  .panel { display: none; }
+  .panel.active { display: block; }
+  .content h1 { font-size: 1.75rem; margin: 32px 0 16px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+  .content h1:first-child { margin-top: 0; }
+  .content h2 { font-size: 1.375rem; margin: 28px 0 12px; padding-bottom: 6px; border-bottom: 1px solid var(--border); color: var(--accent2); }
+  .content h3 { font-size: 1.1rem; margin: 20px 0 8px; color: var(--accent3); }
+  .content h4 { font-size: 1rem; margin: 16px 0 8px; color: var(--text-dim); }
+  .content p { margin: 12px 0; }
+  .content strong { color: #1f2328; }
+  .content blockquote {
+    border-left: 3px solid var(--accent2); padding: 8px 16px; margin: 12px 0;
+    background: var(--surface); border-radius: 0 6px 6px 0; color: var(--text-dim);
+  }
+  .content ul, .content ol { margin: 8px 0 8px 24px; }
+  .content li { margin: 4px 0; }
+  .content hr { border: none; border-top: 1px solid var(--border); margin: 24px 0; }
+  .content a { color: var(--accent); text-decoration: none; }
+  .content a:hover { text-decoration: underline; }
+  .content table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 0.875rem; }
+  .content table th { text-align: left; padding: 10px 14px; background: var(--surface2); border: 1px solid var(--border); font-weight: 600; color: var(--accent2); }
+  .content table td { padding: 8px 14px; border: 1px solid var(--border); }
+  .content table tr:hover td { background: var(--surface); }
+  .content code { font-family: 'SF Mono', 'Fira Code', 'Fira Mono', Menlo, Consolas, monospace; background: var(--surface2); padding: 2px 6px; border-radius: 4px; font-size: 0.85em; color: var(--accent3); }
+  .content pre { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 16px 20px; overflow-x: auto; margin: 16px 0; }
+  .content pre code { background: none; padding: 0; border-radius: 0; font-size: 0.8125rem; color: var(--text); line-height: 1.5; }
+  .source-container { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+  .source-header { display: flex; justify-content: space-between; align-items: center; padding: 10px 16px; background: var(--surface2); border-bottom: 1px solid var(--border); font-size: 0.8125rem; color: var(--text-dim); }
+  .source-filename { font-family: 'SF Mono', Menlo, Consolas, monospace; color: var(--text); font-weight: 500; }
+  .source-lines { display: flex; overflow-x: auto; font-family: 'SF Mono', 'Fira Code', Menlo, Consolas, monospace; font-size: 0.8125rem; line-height: 1.6; }
+  .line-numbers { padding: 16px 0; text-align: right; color: var(--text-dim); user-select: none; min-width: 48px; opacity: 0.5; border-right: 1px solid var(--border); }
+  .line-numbers span { display: block; padding: 0 12px; }
+  .source-code { padding: 16px; flex: 1; white-space: pre; color: var(--text); }
+  .source-code .comment { color: #6a737d; font-style: italic; }
+  .source-code .keyword { color: #cf222e; }
+  .source-code .predicate { color: #0550ae; }
+  .source-code .operator { color: #8250df; }
+  .source-code .bool { color: #1a7f37; }
+  .copy-btn { background: var(--surface); color: var(--text-dim); border: 1px solid var(--border); padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 0.75rem; transition: all 0.15s; }
+  .copy-btn:hover { color: var(--text); background: var(--tab-hover); }
+  .info-box { background: var(--surface); border: 1px solid var(--border); border-left: 3px solid var(--accent2); border-radius: 0 6px 6px 0; padding: 16px 20px; margin: 20px 0; }
+  .info-box.success { border-left-color: var(--accent2); }
+  .info-box.purple { border-left-color: var(--accent3); }
+  .topnav { border-bottom: 1px solid var(--border); font-size: 0.8rem; }
+  .topnav-content { max-width: 1100px; margin: 0 auto; padding: 0 24px; display: flex; align-items: center; gap: 2px; flex-wrap: wrap; }
+  .topnav-home { color: var(--accent); text-decoration: none; font-weight: 500; padding: 8px 0; white-space: nowrap; margin-right: 8px; }
+  .topnav-home:hover { text-decoration: underline; }
+  .nav-group { position: relative; }
+  .nav-group-btn { background: none; border: none; cursor: pointer; color: var(--text-dim); font-size: 0.8rem; padding: 8px 12px; border-radius: 4px; font-family: inherit; transition: color 0.15s, background 0.15s; }
+  .nav-group-btn:hover, .nav-group:focus-within .nav-group-btn { color: var(--text); background: var(--surface2); }
+  .nav-group-btn.active { color: var(--text); font-weight: 600; }
+  .nav-dropdown { display: none; position: absolute; top: 100%; left: 0; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 4px 0; min-width: 180px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); z-index: 200; }
+  .nav-group:hover .nav-dropdown, .nav-group:focus-within .nav-dropdown { display: block; }
+  .nav-dropdown a { display: block; padding: 6px 16px; color: var(--text-dim); text-decoration: none; white-space: nowrap; transition: background 0.1s, color 0.1s; }
+  .nav-dropdown a:hover { background: var(--surface); color: var(--text); }
+  .nav-dropdown a.active { color: var(--accent2); font-weight: 600; background: var(--highlight); }
+  @media (max-width: 768px) {
+    .tab { padding: 8px 12px; font-size: 0.8rem; }
+    main { padding: 20px 16px 60px; }
+    .header-title { font-size: 1.25rem; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="topnav">
+    <div class="topnav-content">
+      <a href="../" class="topnav-home">&larr; All Examples</a>
+      <div class="nav-group">
+        <button class="nav-group-btn">Robustness &#9662;</button>
+        <div class="nav-dropdown">
+          <a href="../isort/">Insertion Sort</a>
+          <a href="../kruskal/">Kruskal</a>
+          <a href="../dijk/">Dijkstra</a>
+          <a href="../arraymax-robust/">ArrayMax</a>
+        </div>
+      </div>
+      <div class="nav-group">
+        <button class="nav-group-btn">Sensitivity &#9662;</button>
+        <div class="nav-dropdown">
+          <a href="../histogram/">Histogram</a>
+          <a href="../cdf/">CDF</a>
+        </div>
+      </div>
+      <div class="nav-group">
+        <button class="nav-group-btn active">Monotonicity &#9662;</button>
+        <div class="nav-dropdown">
+          <a href="../arraymax/">ArrayMax</a>
+          <a href="../arraysum/">ArraySum</a>
+          <a href="../kruskal-mono/">Kruskal</a>
+          <a href="../arraysum-qmono/" class="active">ArraySum (Quant.)</a>
+          <a href="../dijk-mono/">Dijkstra (vacuous)</a>
+        </div>
+      </div>
+      <div class="nav-group">
+        <button class="nav-group-btn">Commutativity &#9662;</button>
+        <div class="nav-dropdown">
+          <a href="../commutativity/">ArraySum</a>
+        </div>
+      </div>
+      <div class="nav-group">
+        <button class="nav-group-btn">Cost &#9662;</button>
+        <div class="nav-dropdown">
+          <a href="../countpositive/">CountPositive</a>
+          <a href="../cost-ext/">Extensions</a>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="header-content">
+    <div class="header-title">ArraySum Quantitative Monotonicity</div>
+    <div class="header-sub">Relational Cell Morphing with PCSAT &mdash; Combining Monotonicity + One-Sided Robustness</div>
+    <div class="tabs">
+      <div class="tab active" data-panel="simple" onclick="switchTab(this)">
+        <span class="tab-icon">&#128196;</span>Overview
+      </div>
+      <div class="tab" data-panel="detailed" onclick="switchTab(this)">
+        <span class="tab-icon">&#128214;</span>Detailed Tutorial
+      </div>
+      <div class="tab" data-panel="source" onclick="switchTab(this)">
+        <span class="tab-icon">&#128187;</span>Source Code
+      </div>
+    </div>
+  </div>
+</header>
+
+<main>
+  <!-- ============ OVERVIEW PANEL ============ -->
+  <div id="panel-simple" class="panel active content">
+    <h1>ArraySum Quantitative Monotonicity Verification</h1>
+    <p>Combines monotonicity and robustness into a single encoding &mdash; proves both direction and magnitude of output change.</p>
+    <hr>
+
+    <h2>The Algorithm</h2>
+<pre><code>ArraySum(A: array, n: size)
+    s := 0
+    for i = 0 to n-1:
+        s := s + A[i]
+    return s</code></pre>
+
+    <h2>The Property</h2>
+    <div class="info-box">
+      <strong>Quantitative Monotonicity:</strong><br>
+      &forall;i. 0 &le; A2[i] &minus; A1[i] &le; &epsilon; &rArr; 0 &le; sum(A2) &minus; sum(A1) &le; n&middot;&epsilon;
+    </div>
+    <p>This single encoding proves two things simultaneously:</p>
+    <table>
+      <tr><th>Component</th><th>What it proves</th></tr>
+      <tr><td>Lower bound: sum(A2) &minus; sum(A1) &ge; 0</td><td><strong>Monotonicity</strong></td></tr>
+      <tr><td>Upper bound: sum(A2) &minus; sum(A1) &le; n&middot;&epsilon;</td><td><strong>One-sided robustness</strong></td></tr>
+    </table>
+
+    <h2>Key Simplification</h2>
+    <p>Since direction is known (s2 &ge; s1), <strong>no sign bits are needed</strong>:</p>
+    <table>
+      <tr><th>Encoding</th><th>Variables</th><th>Booleans</th></tr>
+      <tr><td>Kruskal robustness</td><td>11</td><td>2 (bk, bc)</td></tr>
+      <tr><td>ArraySum monotonicity (async)</td><td>8</td><td>0</td></tr>
+      <tr><td><strong>ArraySum quant. mono.</strong></td><td><strong>8</strong></td><td><strong>0</strong></td></tr>
+    </table>
+
+    <h2>One-Sided Epsilon Bound</h2>
+    <div class="info-box success">
+      <strong>Transition bound:</strong> <code>0 &le; s2' - s1' &le; i' &middot; &epsilon;</code><br>
+      Half the disjuncts of robustness. The <code>or</code> disappears because we know <code>s2 &ge; s1</code>.
+    </div>
+
+    <h2>Verification Results</h2>
+    <table>
+      <tr><th>Goal</th><th>Result</th><th>Time</th><th>Meaning</th></tr>
+      <tr><td><code>s2 - s1 &gt; n * eps</code></td><td><strong>UNSAT</strong></td><td>24s</td><td>Upper bound VERIFIED</td></tr>
+      <tr><td><code>s2 - s1 &le; n * eps</code></td><td><strong>SAT</strong></td><td>6s</td><td>Bound is achievable (tight)</td></tr>
+    </table>
+  </div>
+
+  <!-- ============ DETAILED TUTORIAL PANEL ============ -->
+  <div id="panel-detailed" class="panel content">
+    <h1>ArraySum Quantitative Monotonicity: Detailed Tutorial</h1>
+    <p>How to combine monotonicity and robustness into a single encoding that proves both the direction and magnitude of output change.</p>
+    <hr>
+
+    <h2>Part 1: The Property</h2>
+<pre><code>PROPERTY: Quantitative Monotonicity
+
+&forall;i. 0 &le; A2[i] - A1[i] &le; &epsilon;  &rArr;  0 &le; sum(A2) - sum(A1) &le; n&middot;&epsilon;
+    ~~~~~~~~~~~~~~~~~~~~~~       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    INPUT: every element of      OUTPUT: sum(A2) &ge; sum(A1) (direction)
+    A2 exceeds A1 by at most &epsilon;   AND gap bounded by n&middot;&epsilon; (magnitude)</code></pre>
+
+    <h3>Why n&middot;&epsilon;? (Informal Proof)</h3>
+<pre><code>sum(A2) - sum(A1) = &Sigma; (A2[i] - A1[i])
+
+Each term: 0 &le; A2[i] - A1[i] &le; &epsilon;
+
+Lower bound: &Sigma; (A2[i] - A1[i]) &ge; &Sigma; 0 = 0
+Upper bound: &Sigma; (A2[i] - A1[i]) &le; &Sigma; &epsilon; = n&middot;&epsilon;
+
+Therefore: 0 &le; sum(A2) - sum(A1) &le; n&middot;&epsilon;.  QED.</code></pre>
+
+    <h3>Example</h3>
+<pre><code>&epsilon; = 2
+
+A1 = [3, 1, 7, 2, 5]    &rarr;  sum(A1) = 18
+A2 = [4, 3, 9, 2, 7]    &rarr;  sum(A2) = 25
+
+Per-element gaps: 1, 2, 2, 0, 2  (all in [0, 2] &#10003;)
+Output gap: 25 - 18 = 7
+
+0 &le; 7 &le; 5&middot;2 = 10  &#10003;</code></pre>
+    <hr>
+
+    <h2>Part 2: Relationship to Other Encodings</h2>
+<pre><code>Robustness (two-sided):
+  Precondition: |A1[i] - A2[i]| &le; &epsilon;   (either direction)
+  Postcondition: |sum1 - sum2| &le; n&middot;&epsilon;   (either direction)
+  Encoding: sign bits bk, bc + epsilon bound
+
+Monotonicity (qualitative):
+  Precondition: A1[i] &le; A2[i]         (one direction)
+  Postcondition: sum1 &le; sum2           (one direction, no magnitude)
+  Encoding: no sign bits, no epsilon
+
+QUANTITATIVE MONOTONICITY (this encoding):
+  Precondition: 0 &le; A2[i] - A1[i] &le; &epsilon; (one direction + magnitude)
+  Postcondition: 0 &le; sum2 - sum1 &le; n&middot;&epsilon; (one direction + magnitude)
+  Encoding: no sign bits + ONE-SIDED epsilon bound</code></pre>
+    <hr>
+
+    <h2>Part 3: State Variables</h2>
+    <p><code>Inv(i, k, wk1, wk2, s1, s2, n, eps)</code> &mdash; <strong>8 variables, zero booleans.</strong></p>
+    <table>
+      <tr><th>Variable</th><th>Type</th><th>Meaning</th><th>Changes?</th></tr>
+      <tr><td><code>i</code></td><td>int</td><td>Current element index</td><td>Yes (0 &rarr; n)</td></tr>
+      <tr><td><code>k</code></td><td>int</td><td>Distinguished element index</td><td>Never</td></tr>
+      <tr><td><code>wk1</code></td><td>real</td><td>A1[k]</td><td>Never</td></tr>
+      <tr><td><code>wk2</code></td><td>real</td><td>A2[k]</td><td>Never</td></tr>
+      <tr><td><code>s1</code></td><td>real</td><td>Running sum in run 1</td><td>Yes</td></tr>
+      <tr><td><code>s2</code></td><td>real</td><td>Running sum in run 2</td><td>Yes</td></tr>
+      <tr><td><code>n</code></td><td>int</td><td>Array size</td><td>Never</td></tr>
+      <tr><td><code>eps</code></td><td>real</td><td>Perturbation bound</td><td>Never</td></tr>
+    </table>
+    <hr>
+
+    <h2>Part 4: Initialization</h2>
+<pre><code>Inv(i, k, wk1, wk2, s1, s2, n, eps) :-
+    i = 0,
+    n &gt; 0,
+    0 &le; k, k &lt; n,
+    0 &le; eps,
+    0 &le; wk1,
+    0 &le; wk2 - wk1,        (* monotone direction: wk2 &ge; wk1 *)
+    wk2 - wk1 &le; eps,      (* gap bounded by eps *)
+    s1 = 0, s2 = 0.</code></pre>
+    <p>Compare with robustness precondition (Kruskal):</p>
+<pre><code>(* Robustness: two-sided, needs sign bit *)
+(bk and 0 &le; wk2-wk1 and wk2-wk1 &le; eps) or
+(!bk and 0 &le; wk1-wk2 and wk1-wk2 &le; eps)
+
+(* Quantitative monotonicity: one-sided, no sign bit *)
+0 &le; wk2 - wk1,
+wk2 - wk1 &le; eps</code></pre>
+    <p>The <code>or</code> disappears because we know <code>wk2 &ge; wk1</code>.</p>
+    <hr>
+
+    <h2>Part 5: Transition</h2>
+<pre><code>Inv(i', k, wk1, wk2, s1', s2', n, eps) :-
+    Inv(i, k, wk1, wk2, s1, s2, n, eps),
+    (
+        (* HIT: process distinguished element k *)
+        i &lt; n and i = k and i' = i + 1 and
+        s1' = s1 + wk1 and s2' = s2 + wk2
+    ) or (
+        (* MISS: process other element *)
+        i &lt; n and i &ne; k and i' = i + 1 and
+        s1' &ge; s1 and s2' &ge; s2
+    ) or (
+        (* Finished: stutter *)
+        i &ge; n and i' = i and s1' = s1 and s2' = s2
+    ),
+    (* ONE-SIDED EPSILON BOUND *)
+    0 &le; s2' - s1',
+    s2' - s1' &le; i' * eps.</code></pre>
+
+    <h3>HIT Case Analysis</h3>
+<pre><code>s1' = s1 + wk1,  s2' = s2 + wk2
+
+s2' - s1' = (s2 - s1) + (wk2 - wk1)
+
+Lower: (s2-s1) &ge; 0 (induction) and (wk2-wk1) &ge; 0 (precondition)
+       &rarr; s2'-s1' &ge; 0  &#10003;
+
+Upper: (s2-s1) &le; i&middot;&epsilon; (induction) and (wk2-wk1) &le; &epsilon; (precondition)
+       &rarr; s2'-s1' &le; i&middot;&epsilon; + &epsilon; = (i+1)&middot;&epsilon; = i'&middot;&epsilon;  &#10003;</code></pre>
+
+    <h3>Comparison with Robustness Bound</h3>
+<pre><code>(* Kruskal robustness &mdash; TWO-SIDED: 2 disjuncts &times; 3 conjuncts = 6 constraints *)
+(bc' and 0 &le; c2-c1' and c2-c1' &le; i1'*eps) or
+(!bc' and 0 &le; c1'-c2 and c1'-c2 &le; i1'*eps)
+
+(* Quantitative monotonicity &mdash; ONE-SIDED: just 2 constraints *)
+0 &le; s2' - s1',
+s2' - s1' &le; i' * eps</code></pre>
+    <hr>
+
+    <h2>Part 6: Goal</h2>
+<pre><code>s2 - s1 &gt; n * eps :-
+    Inv(i, k, wk1, wk2, s1, s2, n, eps),
+    n &le; i.</code></pre>
+    <p>Only the upper bound violation needs testing. The lower bound (<code>s1 &gt; s2</code>) is already excluded by <code>0 &le; s2' - s1'</code>. One goal proves both properties.</p>
+    <hr>
+
+    <h2>Key Takeaways</h2>
+    <ol>
+      <li><strong>Combines two properties in one encoding</strong>: Monotonicity (lower bound) + one-sided robustness (upper bound).</li>
+      <li><strong>Known direction eliminates sign bits</strong>: Saves 2 variables vs standard robustness.</li>
+      <li><strong>One-sided epsilon bound</strong>: <code>0 &le; s2' - s1' &le; i'&middot;&epsilon;</code> &mdash; simpler for the solver.</li>
+      <li><strong>Solver has real quantitative work</strong>: Unlike pure monotonicity where the invariant is trivially <code>m1 &le; m2</code>.</li>
+      <li><strong>Bound is tight</strong>: SAT on <code>s2 - s1 &le; n * eps</code> confirms n&middot;&epsilon; is achievable.</li>
+    </ol>
+
+    <div class="info-box success">
+      <strong>Verified:</strong> UNSAT (24s) for upper bound violation. SAT (6s) for bound achievability. Bound is n&middot;&epsilon; (tight).
+    </div>
+  </div>
+
+  <!-- ============ SOURCE CODE PANEL ============ -->
+  <div id="panel-source" class="panel">
+    <div class="source-container">
+      <div class="source-header">
+        <span class="source-filename">quantitative_monotone_arraysum.clp</span>
+        <button class="copy-btn" onclick="copySource()">Copy to clipboard</button>
+      </div>
+      <div class="source-lines">
+        <div class="line-numbers" id="line-nums"></div>
+        <div class="source-code" id="source-code"></div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script>
+function switchTab(el) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('panel-' + el.dataset.panel).classList.add('active');
+}
+
+const sourceCode = `(*
+ArraySum(A: array, n: size)
+    s := 0
+    for i = 0 to n-1:
+        s := s + A[i]
+    return s
+*)
+
+(*
+PROPERTY: Quantitative Monotonicity
+  forall i. 0 <= A2[i] - A1[i] <= eps
+  ==> 0 <= ArraySum(A2) - ArraySum(A1) <= n * eps
+
+This combines:
+  - Monotonicity (lower bound: sum2 >= sum1)
+  - One-sided robustness (upper bound: sum2 - sum1 <= n*eps)
+
+State: i, k, wk1, wk2, s1, s2, n, eps  (8 variables, no booleans)
+*)
+
+
+(******************************************************************************)
+(* INITIALIZATION                                                             *)
+(******************************************************************************)
+
+Inv(i, k, wk1, wk2, s1, s2, n, eps) :-
+    i = 0,
+    n > 0,
+    0 <= k, k < n,
+    0 <= eps,
+    (* Input precondition: 0 <= A2[k] - A1[k] <= eps *)
+    0 <= wk1,
+    0 <= wk2 - wk1,
+    wk2 - wk1 <= eps,
+    (* Both sums start at zero *)
+    s1 = 0, s2 = 0.
+
+
+(******************************************************************************)
+(* TRANSITION (synchronized)                                                  *)
+(******************************************************************************)
+
+Inv(i', k, wk1, wk2, s1', s2', n, eps) :-
+    Inv(i, k, wk1, wk2, s1, s2, n, eps),
+    (
+        (* HIT: process distinguished element k *)
+        i < n and i = k and i' = i + 1 and
+        s1' = s1 + wk1 and s2' = s2 + wk2
+    ) or (
+        (* MISS: process other element — unknown but bounded *)
+        i < n and i <> k and i' = i + 1 and
+        s1' >= s1 and s2' >= s2
+    ) or (
+        (* Finished: stutter *)
+        i >= n and i' = i and s1' = s1 and s2' = s2
+    ),
+    (* QUANTITATIVE MONOTONE BOUND — one-sided epsilon bound *)
+    0 <= s2' - s1',
+    s2' - s1' <= i' * eps.
+
+
+(******************************************************************************)
+(* GOAL: Upper bound violation                                                *)
+(*                                                                            *)
+(* UNSAT = sum(A2) - sum(A1) <= n * eps VERIFIED                              *)
+(******************************************************************************)
+
+s2 - s1 > n * eps :-
+    Inv(i, k, wk1, wk2, s1, s2, n, eps),
+    n <= i.`.trim();
+
+function renderSource() {
+  const lines = sourceCode.split('\\n');
+  const numEl = document.getElementById('line-nums');
+  const codeEl = document.getElementById('source-code');
+  let numsHtml = '', codeHtml = '';
+  lines.forEach((line, i) => {
+    numsHtml += '<span>' + (i + 1) + '</span>';
+    codeHtml += highlightLine(escapeHtml(line)) + '\\n';
+  });
+  numEl.innerHTML = numsHtml;
+  codeEl.innerHTML = codeHtml;
+}
+
+function escapeHtml(s) {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+function highlightLine(line) {
+  line = line.replace(/(\\(\\*.*?\\*\\))/g, '<span class="comment">$1</span>');
+  line = line.replace(/(\/\/.*$)/g, '<span class="comment">$1</span>');
+  line = line.replace(/\\b(Inv|SchTF|SchFT|SchTT)\\b/g, '<span class="predicate">$1</span>');
+  line = line.replace(/\\b(and|or|not)\\b/g, '<span class="keyword">$1</span>');
+  line = line.replace(/(:-)/g, '<span class="keyword">$1</span>');
+  line = line.replace(/\\b(bool|true|false)\\b/g, '<span class="bool">$1</span>');
+  line = line.replace(/(&lt;=|&gt;=|&lt;&gt;|&lt;|&gt;)/g, '<span class="operator">$1</span>');
+  return line;
+}
+
+function copySource() {
+  navigator.clipboard.writeText(sourceCode).then(() => {
+    const btn = document.querySelector('.copy-btn');
+    btn.textContent = 'Copied!';
+    setTimeout(() => btn.textContent = 'Copy to clipboard', 2000);
+  });
+}
+
+renderSource();
+</script>
+</body>
+</html>

@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dijkstra Monotonicity (Vacuous)</title>
+<style>
+  :root {
+    --bg: #ffffff;
+    --surface: #f6f8fa;
+    --surface2: #eef1f5;
+    --border: #d1d9e0;
+    --text: #1f2328;
+    --text-dim: #656d76;
+    --accent: #0969da;
+    --accent2: #1a7f37;
+    --accent3: #8250df;
+    --accent-danger: #cf222e;
+    --code-bg: #f6f8fa;
+    --tab-hover: #eef1f5;
+    --highlight: #0969da1a;
+    --danger-bg: #fff5f5;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+  }
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 24px 0 0;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .header-content { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
+  .header-title { font-size: 1.5rem; font-weight: 600; margin-bottom: 4px; }
+  .header-sub { color: var(--text-dim); font-size: 0.875rem; margin-bottom: 16px; }
+  .tabs { display: flex; gap: 0; }
+  .tab {
+    padding: 10px 20px; cursor: pointer; color: var(--text-dim);
+    font-size: 0.875rem; font-weight: 500;
+    border-bottom: 2px solid transparent;
+    transition: color 0.15s, border-color 0.15s, background 0.15s;
+    user-select: none; border-radius: 6px 6px 0 0;
+  }
+  .tab:hover { color: var(--text); background: var(--tab-hover); }
+  .tab.active { color: var(--text); border-bottom-color: var(--accent-danger); }
+  .tab .tab-icon { margin-right: 6px; }
+  main { max-width: 1100px; margin: 0 auto; padding: 32px 24px 80px; }
+  .panel { display: none; }
+  .panel.active { display: block; }
+  .content h1 { font-size: 1.75rem; margin: 32px 0 16px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+  .content h1:first-child { margin-top: 0; }
+  .content h2 { font-size: 1.375rem; margin: 28px 0 12px; padding-bottom: 6px; border-bottom: 1px solid var(--border); color: var(--accent-danger); }
+  .content h3 { font-size: 1.1rem; margin: 20px 0 8px; color: var(--accent3); }
+  .content h4 { font-size: 1rem; margin: 16px 0 8px; color: var(--text-dim); }
+  .content p { margin: 12px 0; }
+  .content strong { color: #1f2328; }
+  .content blockquote {
+    border-left: 3px solid var(--accent-danger); padding: 8px 16px; margin: 12px 0;
+    background: var(--danger-bg); border-radius: 0 6px 6px 0; color: var(--text-dim);
+  }
+  .content ul, .content ol { margin: 8px 0 8px 24px; }
+  .content li { margin: 4px 0; }
+  .content hr { border: none; border-top: 1px solid var(--border); margin: 24px 0; }
+  .content a { color: var(--accent); text-decoration: none; }
+  .content a:hover { text-decoration: underline; }
+  .content table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 0.875rem; }
+  .content table th { text-align: left; padding: 10px 14px; background: var(--surface2); border: 1px solid var(--border); font-weight: 600; color: var(--accent-danger); }
+  .content table td { padding: 8px 14px; border: 1px solid var(--border); }
+  .content table tr:hover td { background: var(--surface); }
+  .content code { font-family: 'SF Mono', 'Fira Code', 'Fira Mono', Menlo, Consolas, monospace; background: var(--surface2); padding: 2px 6px; border-radius: 4px; font-size: 0.85em; color: var(--accent3); }
+  .content pre { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 16px 20px; overflow-x: auto; margin: 16px 0; }
+  .content pre code { background: none; padding: 0; border-radius: 0; font-size: 0.8125rem; color: var(--text); line-height: 1.5; }
+  .info-box { background: var(--surface); border: 1px solid var(--border); border-left: 3px solid var(--accent-danger); border-radius: 0 6px 6px 0; padding: 16px 20px; margin: 20px 0; }
+  .info-box.danger { border-left-color: var(--accent-danger); background: var(--danger-bg); }
+  .info-box.success { border-left-color: var(--accent2); }
+  .info-box.purple { border-left-color: var(--accent3); }
+  .topnav { border-bottom: 1px solid var(--border); font-size: 0.8rem; }
+  .topnav-content { max-width: 1100px; margin: 0 auto; padding: 0 24px; display: flex; align-items: center; gap: 2px; flex-wrap: wrap; }
+  .topnav-home { color: var(--accent); text-decoration: none; font-weight: 500; padding: 8px 0; white-space: nowrap; margin-right: 8px; }
+  .topnav-home:hover { text-decoration: underline; }
+  .nav-group { position: relative; }
+  .nav-group-btn { background: none; border: none; cursor: pointer; color: var(--text-dim); font-size: 0.8rem; padding: 8px 12px; border-radius: 4px; font-family: inherit; transition: color 0.15s, background 0.15s; }
+  .nav-group-btn:hover, .nav-group:focus-within .nav-group-btn { color: var(--text); background: var(--surface2); }
+  .nav-group-btn.active { color: var(--text); font-weight: 600; }
+  .nav-dropdown { display: none; position: absolute; top: 100%; left: 0; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 4px 0; min-width: 180px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); z-index: 200; }
+  .nav-group:hover .nav-dropdown, .nav-group:focus-within .nav-dropdown { display: block; }
+  .nav-dropdown a { display: block; padding: 6px 16px; color: var(--text-dim); text-decoration: none; white-space: nowrap; transition: background 0.1s, color 0.1s; }
+  .nav-dropdown a:hover { background: var(--surface); color: var(--text); }
+  .nav-dropdown a.active { color: var(--accent-danger); font-weight: 600; background: var(--highlight); }
+  @media (max-width: 768px) {
+    .tab { padding: 8px 12px; font-size: 0.8rem; }
+    main { padding: 20px 16px 60px; }
+    .header-title { font-size: 1.25rem; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="topnav">
+    <div class="topnav-content">
+      <a href="../" class="topnav-home">&larr; All Examples</a>
+      <div class="nav-group">
+        <button class="nav-group-btn">Robustness &#9662;</button>
+        <div class="nav-dropdown">
+          <a href="../isort/">Insertion Sort</a>
+          <a href="../kruskal/">Kruskal</a>
+          <a href="../dijk/">Dijkstra</a>
+          <a href="../arraymax-robust/">ArrayMax</a>
+        </div>
+      </div>
+      <div class="nav-group">
+        <button class="nav-group-btn">Sensitivity &#9662;</button>
+        <div class="nav-dropdown">
+          <a href="../histogram/">Histogram</a>
+          <a href="../cdf/">CDF</a>
+        </div>
+      </div>
+      <div class="nav-group">
+        <button class="nav-group-btn active">Monotonicity &#9662;</button>
+        <div class="nav-dropdown">
+          <a href="../arraymax/">ArrayMax</a>
+          <a href="../arraysum/">ArraySum</a>
+          <a href="../kruskal-mono/">Kruskal</a>
+          <a href="../arraysum-qmono/">ArraySum (Quant.)</a>
+          <a href="../dijk-mono/" class="active">Dijkstra (vacuous)</a>
+        </div>
+      </div>
+      <div class="nav-group">
+        <button class="nav-group-btn">Commutativity &#9662;</button>
+        <div class="nav-dropdown">
+          <a href="../commutativity/">ArraySum</a>
+        </div>
+      </div>
+      <div class="nav-group">
+        <button class="nav-group-btn">Cost &#9662;</button>
+        <div class="nav-dropdown">
+          <a href="../countpositive/">CountPositive</a>
+          <a href="../cost-ext/">Extensions</a>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="header-content">
+    <div class="header-title">Dijkstra Monotonicity (Vacuous)</div>
+    <div class="header-sub">Relational Cell Morphing with PCSAT &mdash; Abstract HIT Vacuity Analysis</div>
+    <div class="tabs">
+      <div class="tab active" data-panel="simple" onclick="switchTab(this)">
+        <span class="tab-icon">&#128196;</span>Overview
+      </div>
+      <div class="tab" data-panel="detailed" onclick="switchTab(this)">
+        <span class="tab-icon">&#128214;</span>Detailed Analysis
+      </div>
+    </div>
+  </div>
+</header>
+
+<main>
+  <!-- ============ OVERVIEW PANEL ============ -->
+  <div id="panel-simple" class="panel active content">
+    <h1>Dijkstra Monotonicity: The Abstract HIT Vacuity</h1>
+    <p>Why Dijkstra's shortest path monotonicity cannot be verified with cell morphing &mdash; the HIT case is indistinguishable from MISS, making the encoding vacuous.</p>
+
+    <div class="info-box danger">
+      <strong>Verdict: VACUOUS.</strong> The solver keeps distances at 0. The UNSAT proves <code>0 &gt; 0</code> is false, not that monotonicity holds.
+    </div>
+    <hr>
+
+    <h2>The Property</h2>
+<pre><code>PROPERTY: Monotonicity of shortest path distance
+
+&forall;e. w1[e] &le; w2[e]  &rArr;  d1(s,v) &le; d2(s,v)
+
+If every edge weight increases, shortest path distances increase.</code></pre>
+
+    <h2>The Problem: HIT &equiv; MISS</h2>
+<pre><code>HIT in Dijkstra:
+  dv1' = d1[u] + wk1     &larr; d1[u] is UNKNOWN (not in state)
+
+Since d1[u] is untracked, we can only say:
+  dv1' &ge; 0                &larr; non-negative distance
+
+MISS in Dijkstra:
+  dv1' &ge; 0                &larr; non-negative distance (same constraint!)
+
+HIT &equiv; MISS  &rarr;  Distinguished cell adds NO information</code></pre>
+
+    <h2>Consequence: Vacuous Invariant</h2>
+    <p>When HIT &equiv; MISS, the simplest invariant is <code>dv1 = 0 and dv2 = 0</code>. The UNSAT proves that <code>0 &gt; 0</code> is false &mdash; meaningless.</p>
+
+    <h2>Verification Results</h2>
+    <table>
+      <tr><th>Goal</th><th>Result</th><th>Time</th><th>Meaning</th></tr>
+      <tr><td><code>dv1 &gt; dv2</code> at termination</td><td><strong>UNSAT</strong></td><td>14s</td><td>Looks verified...</td></tr>
+      <tr><td><code>dv1 &gt; 0</code> at termination</td><td><strong>UNSAT</strong></td><td>&mdash;</td><td>Outputs stuck at 0!</td></tr>
+      <tr><td><code>dv1 &ne; dv2</code> at termination</td><td><strong>UNSAT</strong></td><td>&mdash;</td><td>Both runs identical!</td></tr>
+    </table>
+
+    <h2>Why Robustness Works But Monotonicity Doesn't</h2>
+    <p>Dijkstra <strong>robustness</strong> works (UNSAT in 6 minutes) because the <strong>epsilon bound</strong> <code>|dv1'-dv2'| &le; h'&middot;&epsilon;</code> constrains the <em>relationship</em> between runs even though individual values are unconstrained. Monotonicity has no such bound.</p>
+  </div>
+
+  <!-- ============ DETAILED PANEL ============ -->
+  <div id="panel-detailed" class="panel content">
+    <h1>Dijkstra Monotonicity: Detailed Analysis</h1>
+    <p>A detailed analysis of why Dijkstra's shortest path monotonicity cannot be verified with cell morphing &mdash; and what this teaches us about the technique's limitations.</p>
+    <hr>
+
+    <h2>Part 1: Why The Property Is True</h2>
+<pre><code>Let P* be the shortest path from s to v in G1.
+
+d1(s,v) = cost1(P*)     (P* is optimal in G1)
+         &le; cost2(P*)     (w1[e] &le; w2[e] for every edge in P*)
+         &le; d2(s,v)       (P* is SOME path in G2, optimal may be shorter)
+
+Therefore: d1(s,v) &le; d2(s,v).  QED.</code></pre>
+    <p>The proof uses path optimality in G1 and pointwise weight ordering. Simple and elegant.</p>
+    <hr>
+
+    <h2>Part 2: Why Cell Morphing Fails</h2>
+    <h3>The Dijkstra Relaxation</h3>
+<pre><code>Dijkstra relaxation step:
+  if d[u] + w(u,v) &lt; d[v]:
+      d[v] := d[u] + w(u,v)</code></pre>
+    <p>The new distance <code>d[v]</code> depends on <code>d[u]</code> (the predecessor's distance) which is <strong>NOT TRACKED</strong> in the state. This makes HIT abstract.</p>
+
+    <h3>The Abstract HIT Failure</h3>
+<pre><code>HIT:  dv1' = d1[u] + wk1  &rarr;  dv1' &ge; 0    (d1[u] unknown)
+MISS: dv1' &ge; 0                              (same constraint!)
+
+HIT &equiv; MISS  &rarr;  Distinguished cell adds NO information</code></pre>
+    <hr>
+
+    <h2>Part 3: Comparison with Dijkstra Robustness</h2>
+<pre><code>Robustness encoding:
+  State: i1, i2, k, wk1, wk2, bk, dv1, dv2, bv, h1, h2, n, eps
+  (13 variables)
+
+  HIT: dv1' unconstrained (same as monotonicity)
+  BUT: epsilon bound |dv1'-dv2'| &le; h1'&middot;&epsilon; constrains the RELATIONSHIP
+
+  Even though d1[u] is unknown, the epsilon bound absorbs the
+  unknown predecessor via the growing hop count.</code></pre>
+    <p>Monotonicity has no such bound. The constraint <code>dv1 &le; dv2</code> doesn't hold mid-execution, so it can't be a transition constraint.</p>
+    <hr>
+
+    <h2>Part 4: Proof Technique vs Encoding Capability</h2>
+<pre><code>Real monotonicity proof requires:
+  1. PATH OPTIMALITY &mdash; the chosen path is shortest
+  2. PATH IDENTITY &mdash; compare costs of the SAME path in both graphs
+  3. GLOBAL COMPARISON &mdash; P* exists in G2 too
+
+Cell morphing provides:
+  1. &#10007; No optimality (any relaxation order is allowed)
+  2. &#10007; No path identity (don't track which path was chosen)
+  3. &#10007; No global comparison (only one cell is tracked)
+
+CONCLUSION: The proof structure is fundamentally incompatible
+with cell morphing's local, per-step abstraction.</code></pre>
+    <hr>
+
+    <h2>Part 5: Comparison with Kruskal Monotonicity</h2>
+    <p>Both Dijkstra and Kruskal monotonicity fail in async, but for DIFFERENT reasons:</p>
+    <table>
+      <tr><th>Aspect</th><th>Dijkstra</th><th>Kruskal</th></tr>
+      <tr><td>Vacuity type</td><td>Abstract HIT (HIT &equiv; MISS)</td><td>Unforced HIT (no position guard)</td></tr>
+      <tr><td>HIT explicit?</td><td>No &mdash; <code>d[u]</code> untracked</td><td>Yes &mdash; <code>c' = c + wk</code></td></tr>
+      <tr><td>Detection</td><td><code>output &gt; 0</code> &rarr; UNSAT</td><td>Need precondition removal test</td></tr>
+      <tr><td>Fix in sync model?</td><td><strong>No</strong> &mdash; same problem</td><td><strong>Yes</strong> &mdash; sync works perfectly</td></tr>
+      <tr><td>Root cause</td><td>Predecessor dependency</td><td>Counter tracks edges added, not scanned</td></tr>
+    </table>
+    <p>Dijkstra's failure is more fundamental &mdash; it persists in the sync model because the HIT case is inherently abstract.</p>
+    <hr>
+
+    <h2>Part 6: What Would Fix This?</h2>
+    <h3>Option A: Track Predecessor Distance</h3>
+    <p>Add <code>du1, du2</code> to state. But <code>du1</code> itself depends on earlier predecessors &mdash; the dependency chain doesn't terminate.</p>
+    <h3>Option B: Use a Different Abstraction</h3>
+    <p>Track the structure of the shortest path tree instead of distances. Requires fundamentally different state.</p>
+    <h3>Option C: Accept the Limitation</h3>
+    <p>Dijkstra monotonicity is true but cannot be verified with cell morphing. The property requires global reasoning that local per-step abstraction cannot capture. <strong>This is the pragmatic choice.</strong></p>
+    <hr>
+
+    <h2>Key Takeaways</h2>
+    <ol>
+      <li><strong>Abstract HIT = vacuous encoding.</strong> When HIT is indistinguishable from MISS, the solver finds trivial invariants.</li>
+      <li><strong>Detection is straightforward.</strong> <code>output &gt; 0</code> at termination &rarr; UNSAT immediately reveals outputs are stuck.</li>
+      <li><strong>Predecessor dependency is the root cause.</strong> Dijkstra's relaxation depends on an untracked predecessor.</li>
+      <li><strong>Robustness works but monotonicity doesn't.</strong> The epsilon bound absorbs the predecessor dependency via hop count.</li>
+      <li><strong>Some properties require global reasoning.</strong> This maps the boundary of the technique.</li>
+    </ol>
+
+    <div class="info-box danger">
+      <strong>Verdict:</strong> VACUOUS &mdash; abstract HIT (<code>d[u]</code> untracked). UNSAT in 14s proves <code>0 &gt; 0</code> is false, not monotonicity. Fundamental limitation of cell morphing for predecessor-dependent algorithms with qualitative properties.
+    </div>
+  </div>
+</main>
+
+<script>
+function switchTab(el) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('panel-' + el.dataset.panel).classList.add('active');
+}
+</script>
+</body>
+</html>

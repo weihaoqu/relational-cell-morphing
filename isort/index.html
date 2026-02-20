@@ -234,19 +234,39 @@
   .topnav { border-bottom: 1px solid var(--border); font-size: 0.8rem; }
   .topnav-content {
     max-width: 1100px; margin: 0 auto; padding: 0 24px;
-    display: flex; align-items: center; gap: 4px; overflow-x: auto;
+    display: flex; align-items: center; gap: 2px; flex-wrap: wrap;
   }
   .topnav-home {
     color: var(--accent); text-decoration: none; font-weight: 500;
     padding: 8px 0; white-space: nowrap; margin-right: 8px;
   }
   .topnav-home:hover { text-decoration: underline; }
-  .topnav-link {
-    color: var(--text-dim); text-decoration: none; padding: 6px 10px;
-    border-radius: 4px; white-space: nowrap; transition: color 0.15s, background 0.15s;
+  .nav-group { position: relative; }
+  .nav-group-btn {
+    background: none; border: none; cursor: pointer;
+    color: var(--text-dim); font-size: 0.8rem; padding: 8px 12px;
+    border-radius: 4px; font-family: inherit;
+    transition: color 0.15s, background 0.15s;
   }
-  .topnav-link:hover { color: var(--text); background: var(--surface2); }
-  .topnav-link.active { color: var(--text); background: var(--surface2); font-weight: 600; }
+  .nav-group-btn:hover, .nav-group:focus-within .nav-group-btn {
+    color: var(--text); background: var(--surface2);
+  }
+  .nav-group-btn.active { color: var(--text); font-weight: 600; }
+  .nav-dropdown {
+    display: none; position: absolute; top: 100%; left: 0;
+    background: var(--bg); border: 1px solid var(--border);
+    border-radius: 6px; padding: 4px 0; min-width: 160px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1); z-index: 200;
+  }
+  .nav-group:hover .nav-dropdown,
+  .nav-group:focus-within .nav-dropdown { display: block; }
+  .nav-dropdown a {
+    display: block; padding: 6px 16px; color: var(--text-dim);
+    text-decoration: none; white-space: nowrap;
+    transition: background 0.1s, color 0.1s;
+  }
+  .nav-dropdown a:hover { background: var(--surface); color: var(--text); }
+  .nav-dropdown a.active { color: var(--accent); font-weight: 600; background: var(--highlight); }
 
   /* Responsive */
   @media (max-width: 768px) {
@@ -262,11 +282,45 @@
   <div class="topnav">
     <div class="topnav-content">
       <a href="../" class="topnav-home">&larr; All Examples</a>
-      <a href="../isort/" class="topnav-link active">Insertion Sort</a>
-      <a href="../kruskal/" class="topnav-link">Kruskal</a>
-      <a href="../dijk/" class="topnav-link">Dijkstra</a>
-      <a href="../histogram/" class="topnav-link">Histogram</a>
-      <a href="../cdf/" class="topnav-link">CDF</a>
+      <div class="nav-group">
+        <button class="nav-group-btn active">Robustness &#9662;</button>
+        <div class="nav-dropdown">
+          <a href="../isort/" class="active">Insertion Sort</a>
+          <a href="../kruskal/">Kruskal</a>
+          <a href="../dijk/">Dijkstra</a>
+          <a href="../arraymax-robust/">ArrayMax</a>
+        </div>
+      </div>
+      <div class="nav-group">
+        <button class="nav-group-btn">Sensitivity &#9662;</button>
+        <div class="nav-dropdown">
+          <a href="../histogram/">Histogram</a>
+          <a href="../cdf/">CDF</a>
+        </div>
+      </div>
+      <div class="nav-group">
+        <button class="nav-group-btn">Monotonicity &#9662;</button>
+        <div class="nav-dropdown">
+          <a href="../arraymax/">ArrayMax</a>
+          <a href="../arraysum/">ArraySum</a>
+          <a href="../kruskal-mono/">Kruskal</a>
+          <a href="../arraysum-qmono/">ArraySum (Quant.)</a>
+          <a href="../dijk-mono/">Dijkstra (vacuous)</a>
+        </div>
+      </div>
+      <div class="nav-group">
+        <button class="nav-group-btn">Commutativity &#9662;</button>
+        <div class="nav-dropdown">
+          <a href="../commutativity/">ArraySum</a>
+        </div>
+      </div>
+      <div class="nav-group">
+        <button class="nav-group-btn">Cost &#9662;</button>
+        <div class="nav-dropdown">
+          <a href="../countpositive/">CountPositive</a>
+          <a href="../cost-ext/">Extensions</a>
+        </div>
+      </div>
     </div>
   </div>
   <div class="header-content">

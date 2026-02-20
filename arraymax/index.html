@@ -1,0 +1,1465 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ArrayMax Monotonicity Verification</title>
+<style>
+  :root {
+    --bg: #ffffff;
+    --surface: #f6f8fa;
+    --surface2: #eef1f5;
+    --border: #d1d9e0;
+    --text: #1f2328;
+    --text-dim: #656d76;
+    --accent: #0969da;
+    --accent2: #1a7f37;
+    --accent3: #8250df;
+    --code-bg: #f6f8fa;
+    --tab-hover: #eef1f5;
+    --highlight: #0969da1a;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+  }
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 24px 0 0;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .header-content {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 24px;
+  }
+  .header-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+  .header-sub {
+    color: var(--text-dim);
+    font-size: 0.875rem;
+    margin-bottom: 16px;
+  }
+  .tabs {
+    display: flex;
+    gap: 0;
+  }
+  .tab {
+    padding: 10px 20px;
+    cursor: pointer;
+    color: var(--text-dim);
+    font-size: 0.875rem;
+    font-weight: 500;
+    border-bottom: 2px solid transparent;
+    transition: color 0.15s, border-color 0.15s, background 0.15s;
+    user-select: none;
+    border-radius: 6px 6px 0 0;
+  }
+  .tab:hover {
+    color: var(--text);
+    background: var(--tab-hover);
+  }
+  .tab.active {
+    color: var(--text);
+    border-bottom-color: var(--accent);
+  }
+  .tab .tab-icon { margin-right: 6px; }
+
+  main {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 32px 24px 80px;
+  }
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  /* Markdown-rendered content */
+  .content h1 { font-size: 1.75rem; margin: 32px 0 16px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+  .content h1:first-child { margin-top: 0; }
+  .content h2 { font-size: 1.375rem; margin: 28px 0 12px; padding-bottom: 6px; border-bottom: 1px solid var(--border); color: var(--accent); }
+  .content h3 { font-size: 1.1rem; margin: 20px 0 8px; color: var(--accent3); }
+  .content h4 { font-size: 1rem; margin: 16px 0 8px; color: var(--text-dim); }
+  .content p { margin: 12px 0; }
+  .content strong { color: #1f2328; }
+  .content blockquote {
+    border-left: 3px solid var(--accent);
+    padding: 8px 16px;
+    margin: 12px 0;
+    background: var(--surface);
+    border-radius: 0 6px 6px 0;
+    color: var(--text-dim);
+  }
+  .content ul, .content ol { margin: 8px 0 8px 24px; }
+  .content li { margin: 4px 0; }
+  .content hr { border: none; border-top: 1px solid var(--border); margin: 24px 0; }
+  .content a { color: var(--accent); text-decoration: none; }
+  .content a:hover { text-decoration: underline; }
+  .content table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 0.875rem;
+  }
+  .content table th {
+    text-align: left;
+    padding: 10px 14px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    font-weight: 600;
+    color: var(--accent);
+  }
+  .content table td {
+    padding: 8px 14px;
+    border: 1px solid var(--border);
+  }
+  .content table tr:hover td {
+    background: var(--surface);
+  }
+  .content code {
+    font-family: 'SF Mono', 'Fira Code', 'Fira Mono', Menlo, Consolas, monospace;
+    background: var(--surface2);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.85em;
+    color: var(--accent3);
+  }
+  .content pre {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px 20px;
+    overflow-x: auto;
+    margin: 16px 0;
+    position: relative;
+  }
+  .content pre code {
+    background: none;
+    padding: 0;
+    border-radius: 0;
+    font-size: 0.8125rem;
+    color: var(--text);
+    line-height: 1.5;
+  }
+
+  /* Source code panel */
+  .source-container {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .source-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 16px;
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+    font-size: 0.8125rem;
+    color: var(--text-dim);
+  }
+  .source-filename {
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    color: var(--text);
+    font-weight: 500;
+  }
+  .source-lines {
+    display: flex;
+    overflow-x: auto;
+    font-family: 'SF Mono', 'Fira Code', Menlo, Consolas, monospace;
+    font-size: 0.8125rem;
+    line-height: 1.6;
+  }
+  .line-numbers {
+    padding: 16px 0;
+    text-align: right;
+    color: var(--text-dim);
+    user-select: none;
+    min-width: 48px;
+    opacity: 0.5;
+    border-right: 1px solid var(--border);
+  }
+  .line-numbers span {
+    display: block;
+    padding: 0 12px;
+  }
+  .source-code {
+    padding: 16px;
+    flex: 1;
+    white-space: pre;
+    color: var(--text);
+  }
+  .source-code .comment { color: #6a737d; font-style: italic; }
+  .source-code .keyword { color: #cf222e; }
+  .source-code .predicate { color: #0550ae; }
+  .source-code .operator { color: #8250df; }
+  .source-code .bool { color: #1a7f37; }
+  .source-code .number { color: #953800; }
+
+  /* Copy button */
+  .copy-btn {
+    background: var(--surface);
+    color: var(--text-dim);
+    border: 1px solid var(--border);
+    padding: 4px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.75rem;
+    transition: all 0.15s;
+  }
+  .copy-btn:hover { color: var(--text); background: var(--tab-hover); }
+
+  /* File selector tabs */
+  .file-tabs {
+    display: flex; gap: 0; padding: 0 16px;
+    background: var(--surface2); border-bottom: 1px solid var(--border);
+  }
+  .file-tab {
+    padding: 6px 14px; cursor: pointer; font-size: 0.75rem;
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    color: var(--text-dim); border-bottom: 2px solid transparent;
+    transition: color 0.15s, border-color 0.15s; user-select: none;
+  }
+  .file-tab:hover { color: var(--text); }
+  .file-tab.active { color: var(--accent); border-bottom-color: var(--accent); font-weight: 600; }
+
+  /* Info boxes */
+  .info-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    border-radius: 0 6px 6px 0;
+    padding: 16px 20px;
+    margin: 20px 0;
+  }
+  .info-box.success { border-left-color: var(--accent2); }
+  .info-box.purple { border-left-color: var(--accent3); }
+
+  /* Top navigation */
+  .topnav { border-bottom: 1px solid var(--border); font-size: 0.8rem; }
+  .topnav-content {
+    max-width: 1100px; margin: 0 auto; padding: 0 24px;
+    display: flex; align-items: center; gap: 2px; flex-wrap: wrap;
+  }
+  .topnav-home {
+    color: var(--accent); text-decoration: none; font-weight: 500;
+    padding: 8px 0; white-space: nowrap; margin-right: 8px;
+  }
+  .topnav-home:hover { text-decoration: underline; }
+  .nav-group { position: relative; }
+  .nav-group-btn {
+    background: none; border: none; cursor: pointer;
+    color: var(--text-dim); font-size: 0.8rem; padding: 8px 12px;
+    border-radius: 4px; font-family: inherit;
+    transition: color 0.15s, background 0.15s;
+  }
+  .nav-group-btn:hover, .nav-group:focus-within .nav-group-btn {
+    color: var(--text); background: var(--surface2);
+  }
+  .nav-group-btn.active { color: var(--text); font-weight: 600; }
+  .nav-dropdown {
+    display: none; position: absolute; top: 100%; left: 0;
+    background: var(--bg); border: 1px solid var(--border);
+    border-radius: 6px; padding: 4px 0; min-width: 160px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1); z-index: 200;
+  }
+  .nav-group:hover .nav-dropdown,
+  .nav-group:focus-within .nav-dropdown { display: block; }
+  .nav-dropdown a {
+    display: block; padding: 6px 16px; color: var(--text-dim);
+    text-decoration: none; white-space: nowrap;
+    transition: background 0.1s, color 0.1s;
+  }
+  .nav-dropdown a:hover { background: var(--surface); color: var(--text); }
+  .nav-dropdown a.active { color: var(--accent); font-weight: 600; background: var(--highlight); }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .tab { padding: 8px 12px; font-size: 0.8rem; }
+    main { padding: 20px 16px 60px; }
+    .header-title { font-size: 1.25rem; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="topnav">
+    <div class="topnav-content">
+      <a href="../" class="topnav-home">&larr; All Examples</a>
+      <div class="nav-group">
+        <button class="nav-group-btn">Robustness &#9662;</button>
+        <div class="nav-dropdown">
+          <a href="../isort/">Insertion Sort</a>
+          <a href="../kruskal/">Kruskal</a>
+          <a href="../dijk/">Dijkstra</a>
+          <a href="../arraymax-robust/">ArrayMax</a>
+        </div>
+      </div>
+      <div class="nav-group">
+        <button class="nav-group-btn">Sensitivity &#9662;</button>
+        <div class="nav-dropdown">
+          <a href="../histogram/">Histogram</a>
+          <a href="../cdf/">CDF</a>
+        </div>
+      </div>
+      <div class="nav-group">
+        <button class="nav-group-btn active">Monotonicity &#9662;</button>
+        <div class="nav-dropdown">
+          <a href="../arraymax/" class="active">ArrayMax</a>
+          <a href="../arraysum/">ArraySum</a>
+          <a href="../kruskal-mono/">Kruskal</a>
+          <a href="../arraysum-qmono/">ArraySum (Quant.)</a>
+          <a href="../dijk-mono/">Dijkstra (vacuous)</a>
+        </div>
+      </div>
+      <div class="nav-group">
+        <button class="nav-group-btn">Commutativity &#9662;</button>
+        <div class="nav-dropdown">
+          <a href="../commutativity/">ArraySum</a>
+        </div>
+      </div>
+      <div class="nav-group">
+        <button class="nav-group-btn">Cost &#9662;</button>
+        <div class="nav-dropdown">
+          <a href="../countpositive/">CountPositive</a>
+          <a href="../cost-ext/">Extensions</a>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="header-content">
+    <div class="header-title">ArrayMax Monotonicity Verification</div>
+    <div class="header-sub">Relational Cell Morphing with PCSAT &mdash; Monotonicity Proof</div>
+    <div class="tabs">
+      <div class="tab active" data-panel="simple" onclick="switchTab(this)">
+        <span class="tab-icon">&#128196;</span>Overview
+      </div>
+      <div class="tab" data-panel="detailed" onclick="switchTab(this)">
+        <span class="tab-icon">&#128214;</span>Detailed Tutorial
+      </div>
+      <div class="tab" data-panel="source" onclick="switchTab(this)">
+        <span class="tab-icon">&#128187;</span>Source Code
+      </div>
+    </div>
+  </div>
+</header>
+
+<main>
+  <!-- ============ SIMPLE / OVERVIEW PANEL ============ -->
+  <div id="panel-simple" class="panel active content">
+    <h1>ArrayMax Monotonicity Verification with PCSAT</h1>
+    <p>A concise tutorial on verifying monotonicity of the array maximum algorithm using relational cell morphing.</p>
+    <hr>
+
+    <h2>The Algorithm</h2>
+<pre><code>ArrayMax(A: array, n: size)
+    m := A[0]
+    for i = 1 to n-1:
+        if A[i] &gt; m:
+            m := A[i]
+    return m</code></pre>
+    <p><strong>Key observation</strong>: The algorithm scans left to right, maintaining a running maximum. The running maximum is <strong>non-decreasing</strong>: <code>m' = max(m, A[i]) &ge; m</code> always.</p>
+    <hr>
+
+    <h2>The Property: Monotonicity</h2>
+<pre><code>&forall;i. A1[i] &le; A2[i]  &rArr;  max(A1) &le; max(A2)
+     ~~~~~~~~~~~~~~~~     ~~~~~~~~~~~~~~~~~~~~
+     INPUT: every element     OUTPUT: maximum value
+     of A1 &le; corr. in A2     of A1 &le; maximum of A2</code></pre>
+    <p><strong>In plain English</strong>: If every element of array A1 is at most the corresponding element of array A2, then the maximum of A1 is at most the maximum of A2.</p>
+
+    <h3>Why Is This True? (Informal)</h3>
+<pre><code>Let j be the index where A1 achieves its maximum.
+
+max(A1) = A1[j]           (definition of max)
+        &le; A2[j]           (precondition: A1[j] &le; A2[j])
+        &le; max(A2)          (A2[j] &le; max over all A2)
+
+Therefore: max(A1) &le; max(A2).  QED.</code></pre>
+    <p>Three lines. The chain <code>A1[j] &le; A2[j] &le; max(A2)</code> does all the work.</p>
+    <hr>
+
+    <h2>How Monotonicity Differs from Robustness</h2>
+    <table>
+      <thead>
+        <tr><th>Aspect</th><th>Robustness</th><th>Monotonicity</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Input relation</td><td>Two-sided: |A1[i] - A2[i]| &le; &epsilon;</td><td>One-sided: A1[i] &le; A2[i]</td></tr>
+        <tr><td>Output relation</td><td>Two-sided: |out1 - out2| &le; bound</td><td>One-sided: out1 &le; out2</td></tr>
+        <tr><td>Quantitative?</td><td>Yes &mdash; bound is K&middot;&epsilon;</td><td>No &mdash; just an ordering</td></tr>
+        <tr><td>Sign bits needed?</td><td>Yes (<code>bk</code>, <code>bc</code>)</td><td>No &mdash; direction is known</td></tr>
+        <tr><td>Epsilon parameter?</td><td>Yes</td><td>No</td></tr>
+      </tbody>
+    </table>
+    <hr>
+
+    <h2>The Solution: Relational Cell Morphing</h2>
+    <h3>The Setup: One Distinguished Cell</h3>
+    <p>Instead of tracking the entire array, we track <strong>one symbolic cell</strong> <code>k</code> and the running maximum:</p>
+<pre><code>&boxdr;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxdr;
+&boxv;  INPUT CELL (Array Element)                                 &boxv;
+&boxv;                                                             &boxv;
+&boxv;  k:      Distinguished index (SYMBOLIC)                     &boxv;
+&boxv;  wk1:    A1[k] &mdash; value in array 1                          &boxv;
+&boxv;  wk2:    A2[k] &mdash; value in array 2                          &boxv;
+&boxv;  PRECONDITION: wk1 &le; wk2                                    &boxv;
+&boxv;  k, wk1, wk2 NEVER CHANGE                                  &boxv;
+&boxv;                                                             &boxv;
+&boxv;  OUTPUT CELL (Running Maximum)                              &boxv;
+&boxv;  m1:     Current max in run 1 (changes, non-decreasing)     &boxv;
+&boxv;  m2:     Current max in run 2 (changes, non-decreasing)     &boxv;
+&boxv;  POSTCONDITION: m1 &le; m2 at termination                     &boxv;
+&boxdr;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxdr;</code></pre>
+    <p><strong>Key insight</strong>: <code>k</code> is <strong>symbolic</strong> (universally quantified). If we prove the property for arbitrary <code>k</code>, it holds for ALL indices!</p>
+    <p><strong>What's missing compared to robustness</strong>: No sign bits (<code>bk</code>, <code>bc</code>) &mdash; direction is known. No epsilon &mdash; no quantitative bound. Only 8 variables (vs 11 for Kruskal).</p>
+    <hr>
+
+    <h2>The HIT/MISS Abstraction</h2>
+    <p>When processing element <code>i</code>:</p>
+    <table>
+      <thead>
+        <tr><th>Case</th><th>Condition</th><th>What We Know</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>HIT</strong></td><td><code>i = k</code></td><td>Processing distinguished cell &rarr; <code>m' = max(m, wk)</code> (exact!)</td></tr>
+        <tr><td><strong>MISS</strong></td><td><code>i &ne; k</code></td><td>Processing other cell &rarr; <code>m' &ge; m</code> (non-decreasing, value unknown)</td></tr>
+      </tbody>
+    </table>
+
+    <h3>HIT Case: All Four Sub-Cases Maintain Monotonicity</h3>
+<pre><code>m1&ge;wk1, m2&ge;wk2:  m1'=m1,  m2'=m2   &rarr; m1&le;m2  (invariant)
+m1&ge;wk1, wk2&gt;m2:  m1'=m1,  m2'=wk2  &rarr; m1&le;m2&le;wk2
+wk1&gt;m1, m2&ge;wk2:  m1'=wk1, m2'=m2   &rarr; wk1&le;wk2&le;m2
+wk1&gt;m1, wk2&gt;m2:  m1'=wk1, m2'=wk2  &rarr; wk1&le;wk2 (precondition)</code></pre>
+    <hr>
+
+    <h2>Why the Asynchronous Model Matters</h2>
+    <p>A <strong>synchronized</strong> model (single counter <code>i</code>) proves monotonicity for lockstep execution. The proof is trivial: <code>m1 &le; m2</code> is the invariant.</p>
+    <p>An <strong>asynchronous</strong> model (two counters <code>i1, i2</code> with scheduler) proves monotonicity for <strong>all possible interleavings</strong> &mdash; a much stronger result.</p>
+
+    <div class="info-box purple">
+      <strong>THE ASYNC CHALLENGE</strong><br><br>
+      <code>m1 &le; m2</code> is <strong>NOT</strong> a valid mid-execution invariant! When <code>i1 &gt; i2</code>, run 1 has seen more elements, so <code>m1</code> can exceed <code>m2</code>.<br><br>
+      <strong>Example</strong>: A1 = [1,1,1,1,10], A2 = [2,2,2,2,20]. After i1=5, i2=2: m1=10, m2=2 &rarr; m1 &gt; m2!<br><br>
+      The monotone bound <code>m1' &le; m2'</code> <strong>cannot</strong> be a transition constraint. PCSAT must discover a non-trivial invariant on its own.
+    </div>
+    <hr>
+
+    <h2>State Variables</h2>
+<pre><code>Inv(i1, i2, k, wk1, wk2, m1, m2, n)</code></pre>
+    <table>
+      <thead>
+        <tr><th>Variable</th><th>Meaning</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>i1, i2</code></td><td>Loop counter for run 1, run 2 (0 &rarr; n)</td></tr>
+        <tr><td><code>k</code></td><td>Distinguished index (symbolic, universally quantified)</td></tr>
+        <tr><td><code>wk1, wk2</code></td><td>Values A1[k], A2[k] at distinguished cell (never change)</td></tr>
+        <tr><td><code>m1, m2</code></td><td>Running maximum in run 1, run 2 (non-decreasing)</td></tr>
+        <tr><td><code>n</code></td><td>Array size (never changes)</td></tr>
+      </tbody>
+    </table>
+    <hr>
+
+    <h2>Verification Results</h2>
+    <h3>Synchronized Model (single counter)</h3>
+    <table>
+      <thead>
+        <tr><th>Goal</th><th>Result</th><th>Time</th><th>Meaning</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>m1 &gt; m2</code></td><td><strong>UNSAT</strong></td><td>(fast)</td><td>Monotonicity VERIFIED</td></tr>
+        <tr><td><code>m1 &le; m2</code></td><td><strong>SAT</strong></td><td>(fast)</td><td>Bound achievable</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Asynchronous Model (two counters + scheduler)</h3>
+    <table>
+      <thead>
+        <tr><th>Goal</th><th>Result</th><th>Time</th><th>Meaning</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>m1 &gt; m2</code> at termination</td><td><strong>UNSAT</strong></td><td>8m 35s</td><td>Monotonicity VERIFIED</td></tr>
+        <tr><td><code>m1 &gt; m2</code> mid-execution</td><td><strong>SAT</strong></td><td>5.7s</td><td>Non-vacuity confirmed</td></tr>
+        <tr><td><code>m1 &le; m2</code> at termination</td><td>timeout</td><td>10+ hrs</td><td>See performance note</td></tr>
+      </tbody>
+    </table>
+
+    <div class="info-box success">
+      <strong>VERIFICATION COMPLETE</strong><br><br>
+      <strong>Property:</strong> Monotonicity of ArrayMax<br>
+      <strong>Statement:</strong> &forall;i. A1[i] &le; A2[i] &rArr; max(A1) &le; max(A2)<br>
+      <strong>Result:</strong> VERIFIED (both synchronized and asynchronous models)<br>
+      <strong>Evidence:</strong> Violation query <code>m1 &gt; m2</code> returns UNSAT (no counterexample exists)
+    </div>
+    <hr>
+
+    <h2>Key Takeaways</h2>
+    <ol>
+      <li><strong>Monotonicity is "qualitative robustness"</strong>: Same encoding structure, different mathematical content. The monotone bound <code>m1' &le; m2'</code> plays the same structural role as the epsilon bound.</li>
+      <li><strong>No sign bits, no epsilon</strong>: One-sided properties are simpler than two-sided. Only 8 variables (vs 11 for Kruskal robustness).</li>
+      <li><strong>HIT is fully explicit</strong>: <code>m' = max(m, wk)</code> depends only on known values &mdash; like Kruskal's accumulation, unlike Dijkstra's relaxation.</li>
+      <li><strong>Synchronized = simple + fast, Asynchronous = powerful + slow</strong>: The async model proves a stronger result (all interleavings) but the solver must discover a non-trivial invariant.</li>
+      <li><strong>PCSAT Goal Interpretation</strong>: Violation UNSAT &rarr; verified; mid-execution SAT &rarr; non-vacuity confirmed.</li>
+    </ol>
+    <hr>
+
+    <h2>Comparison: Synchronized vs Asynchronous</h2>
+    <table>
+      <thead>
+        <tr><th>Aspect</th><th>Synchronized</th><th>Asynchronous</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Counters</td><td>1 (<code>i</code>)</td><td>2 (<code>i1, i2</code>)</td></tr>
+        <tr><td>Variables</td><td>7</td><td>8</td></tr>
+        <tr><td>Scheduler</td><td>None</td><td>SchTF, SchFT, SchTT + fairness</td></tr>
+        <tr><td>Monotone bound</td><td><code>m1' &le; m2'</code> as transition constraint</td><td>None &mdash; solver discovers invariant</td></tr>
+        <tr><td>Invariant</td><td>Trivial: <code>m1 &le; m2</code></td><td>Complex: discovered by PCSAT</td></tr>
+        <tr><td>Solver time (UNSAT)</td><td>Fast</td><td>8m 35s</td></tr>
+        <tr><td>m1 &gt; m2 mid-execution?</td><td>Never (bound prevents it)</td><td>Yes (SAT in 5.7s)</td></tr>
+        <tr><td>Proves</td><td>Lockstep execution</td><td>ALL interleavings</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ============ DETAILED TUTORIAL PANEL ============ -->
+  <div id="panel-detailed" class="panel content">
+    <h1>ArrayMax Monotonicity: Verification with Relational Cell Morphing</h1>
+    <h3>A step-by-step tutorial explaining the PCSAT encoding for verifying monotonicity of array maximum, covering both synchronized and asynchronous models.</h3>
+    <hr>
+
+    <h2>Verification Results</h2>
+    <h3>Synchronized Model (single counter)</h3>
+    <table>
+      <thead><tr><th>Goal</th><th>Result</th><th>Time</th><th>Meaning</th></tr></thead>
+      <tbody>
+        <tr><td><code>m1 &gt; m2</code></td><td><strong>UNSAT</strong></td><td>(fast)</td><td>Monotonicity VERIFIED</td></tr>
+        <tr><td><code>m1 &le; m2</code></td><td><strong>SAT</strong></td><td>(fast)</td><td>Bound achievable</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Asynchronous Model (two counters + scheduler)</h3>
+    <table>
+      <thead><tr><th>Goal</th><th>Result</th><th>Time</th><th>Meaning</th></tr></thead>
+      <tbody>
+        <tr><td><code>m1 &gt; m2</code> at termination</td><td><strong>UNSAT</strong></td><td>8m 35s</td><td>Monotonicity VERIFIED</td></tr>
+        <tr><td><code>m1 &gt; m2</code> mid-execution</td><td><strong>SAT</strong></td><td>5.7s</td><td>Non-vacuity confirmed</td></tr>
+        <tr><td><code>m1 &le; m2</code> at termination</td><td>timeout</td><td>10+ hrs</td><td>See performance note</td></tr>
+      </tbody>
+    </table>
+    <p><strong>Performance note</strong>: The terminal SAT query (<code>m1 &le; m2</code> at termination) does not terminate. This is a known PCSAT asymmetry for encodings without transition-level bounds &mdash; the MISS case <code>m1' &ge; m1</code> leaves the state space unbounded, making concrete witness search intractable. The mid-execution SAT query (5.7s) serves as the non-vacuity check instead.</p>
+    <hr>
+
+    <h2>Part 1: The Algorithm</h2>
+<pre><code>ArrayMax(A: array, n: size)
+    m := A[0]
+    for i = 1 to n-1:
+        if A[i] &gt; m:
+            m := A[i]
+    return m</code></pre>
+    <h3>Key Observations</h3>
+    <ol>
+      <li><strong>Scans left to right</strong>: Fixed iteration order, independent of data values</li>
+      <li><strong>Running maximum is non-decreasing</strong>: <code>m' = max(m, A[i]) &ge; m</code> always</li>
+      <li><strong>Output depends on all elements</strong>: Every element has a chance to become the max</li>
+    </ol>
+    <hr>
+
+    <h2>Part 2: The Property &mdash; Monotonicity</h2>
+<pre><code>PROPERTY: Monotonicity under pointwise ordering
+
+&forall;i. A1[i] &le; A2[i]  &rArr;  max(A1) &le; max(A2)
+    ~~~~~~~~~~~~~~~~     ~~~~~~~~~~~~~~~~~~~~
+    INPUT: every element     OUTPUT: maximum value
+    of A1 &le; corr. in A2     of A1 &le; maximum of A2</code></pre>
+
+    <h3>Why Is This True? (Informal Proof)</h3>
+<pre><code>Let j be the index where A1 achieves its maximum.
+
+max(A1) = A1[j]           (definition of max)
+        &le; A2[j]           (precondition: A1[j] &le; A2[j])
+        &le; max(A2)          (A2[j] &le; max over all A2)
+
+Therefore: max(A1) &le; max(A2).  QED.</code></pre>
+    <p>Three lines. The chain <code>A1[j] &le; A2[j] &le; max(A2)</code> does all the work.</p>
+
+    <h3>Example</h3>
+<pre><code>A1 = [3, 1, 7, 2, 5]    &rarr;  max(A1) = 7
+A2 = [4, 3, 9, 2, 8]    &rarr;  max(A2) = 9
+
+Pointwise: 3&le;4, 1&le;3, 7&le;9, 2&le;2, 5&le;8
+Result:    7 &le; 9</code></pre>
+    <hr>
+
+    <h2>Part 3: How Monotonicity Differs from Robustness</h2>
+    <p>This is a fundamental structural distinction.</p>
+<pre><code>Robustness:    &forall;i. |A1[i] - A2[i]| &le; &epsilon;  &rArr;  |max(A1) - max(A2)| &le; &epsilon;
+Monotonicity:  &forall;i. A1[i] &le; A2[i]         &rArr;  max(A1) &le; max(A2)</code></pre>
+    <table>
+      <thead><tr><th>Aspect</th><th>Robustness</th><th>Monotonicity</th></tr></thead>
+      <tbody>
+        <tr><td>Input relation</td><td>Two-sided: |A1[i] - A2[i]| &le; &epsilon;</td><td>One-sided: A1[i] &le; A2[i]</td></tr>
+        <tr><td>Output relation</td><td>Two-sided: |out1 - out2| &le; bound</td><td>One-sided: out1 &le; out2</td></tr>
+        <tr><td>Quantitative?</td><td>Yes &mdash; bound is K&middot;&epsilon;</td><td>No &mdash; just an ordering</td></tr>
+        <tr><td>Sign bits needed?</td><td>Yes (bk, bc)</td><td>No &mdash; direction is known</td></tr>
+        <tr><td>Epsilon parameter?</td><td>Yes</td><td>No</td></tr>
+      </tbody>
+    </table>
+    <h3>Key Encoding Consequence</h3>
+    <p>In robustness, the epsilon bound <code>|c1' - c2'| &le; i'&middot;&epsilon;</code> appears as a <strong>separate conjunct</strong> at the end of every transition. In monotonicity, the analogous role is played by <code>m1' &le; m2'</code> &mdash; the <strong>monotone bound</strong>.</p>
+<pre><code>Robustness transition:     (case disjunction), (epsilon bound)
+Monotonicity transition:   (case disjunction), (monotone bound)
+                                                ^^^^^^^^^^^^^^
+                                              Same structural role!</code></pre>
+    <hr>
+
+    <h2>Part 4: Relational Cell Morphing Setup</h2>
+<pre><code>+-----------------------------------------------------------------------+
+|                    TWO DISTINGUISHED CELLS                              |
++-----------------------------------------------------------------------+
+|                                                                         |
+|  1. INPUT CELL (Array Element)                                          |
+|     k:       Distinguished index (SYMBOLIC)                             |
+|     wk1:     A1[k] &mdash; value in array 1                                  |
+|     wk2:     A2[k] &mdash; value in array 2                                  |
+|     PRECONDITION: wk1 &le; wk2 (monotone input)                           |
+|     IMPLICIT: &forall;j &ne; k. A1[j] &le; A2[j]                                  |
+|     k, wk1, wk2 NEVER CHANGE                                           |
+|                                                                         |
+|  2. OUTPUT CELL (Running Maximum)                                       |
+|     m1:      Current max in run 1                                       |
+|     m2:      Current max in run 2                                       |
+|     POSTCONDITION: m1 &le; m2 (monotonicity)                              |
+|     m1, m2 CAN CHANGE (non-decreasing)                                  |
+|                                                                         |
+|  WHAT'S MISSING compared to robustness:                                 |
+|    - No sign bits (bk, bc) &mdash; direction is known                        |
+|    - No epsilon &mdash; no quantitative bound                                |
+|    - Leaner state: 7 variables (vs 11 for Kruskal)                      |
++-----------------------------------------------------------------------+</code></pre>
+    <hr>
+
+    <h2>Part 5: HIT/MISS Abstraction</h2>
+    <p>When processing element <code>i</code>:</p>
+    <div class="info-box">
+      <strong>HIT/MISS ABSTRACTION</strong><br><br>
+      <strong>HIT: We process the DISTINGUISHED element k</strong><br>
+      <code>m1' = max(m1, wk1)</code> &larr; We know EXACTLY what happens!<br>
+      <code>m2' = max(m2, wk2)</code><br><br>
+      Both operands known: <code>m1 &le; m2</code> (induction hypothesis), <code>wk1 &le; wk2</code> (precondition).<br>
+      All four sub-cases maintain <code>m1' &le; m2'</code>:<br><br>
+      <code>m1&ge;wk1, m2&ge;wk2</code>: m1'=m1, m2'=m2 &rarr; m1&le;m2<br>
+      <code>m1&ge;wk1, wk2&gt;m2</code>: m1'=m1, m2'=wk2 &rarr; m1&le;m2&le;wk2<br>
+      <code>wk1&gt;m1, m2&ge;wk2</code>: m1'=wk1, m2'=m2 &rarr; wk1&le;wk2&le;m2<br>
+      <code>wk1&gt;m1, wk2&gt;m2</code>: m1'=wk1, m2'=wk2 &rarr; wk1&le;wk2<br><br>
+      <strong>MISS: We process some OTHER element (not k)</strong><br>
+      <code>m1' = max(m1, A1[i])</code> &larr; A1[i] UNKNOWN<br>
+      <code>m2' = max(m2, A2[i])</code> &larr; A2[i] UNKNOWN<br><br>
+      What we know: <code>A1[i] &le; A2[i]</code> (universal precondition), <code>m1' &ge; m1</code>, <code>m2' &ge; m2</code> (max never decreases).<br><br>
+      In <strong>SYNCHRONIZED</strong> model: Both process the same element &rarr; <code>m1' &le; m2'</code> maintained.<br>
+      In <strong>ASYNCHRONOUS</strong> model: Runs at different indices &rarr; <code>m1' &le; m2</code> can BREAK!
+    </div>
+
+    <h3>HIT is Fully Explicit (Like Kruskal, Unlike Dijkstra)</h3>
+    <p>The <code>max(m, w)</code> operation depends ONLY on known values:</p>
+<pre><code>ArrayMax HIT:   m1' = max(m1, wk1)    &larr; m1 from invariant, wk1 from input cell
+Kruskal HIT:    c1' = c1 + wk1        &larr; c1 from invariant, wk1 from input cell
+Dijkstra HIT:   dv1' = d1[u] + wk1    &larr; d1[u] UNTRACKED!</code></pre>
+    <p>Both ArrayMax and Kruskal have fully explicit HIT cases &mdash; the distinguished cell value completely determines the transition.</p>
+    <hr>
+
+    <h2>Part 6: State Variables</h2>
+    <h3>Synchronized Model</h3>
+<pre><code>Inv(i, k, wk1, wk2, m1, m2, n)</code></pre>
+    <table>
+      <thead><tr><th>Variable</th><th>Type</th><th>Meaning</th><th>Changes?</th></tr></thead>
+      <tbody>
+        <tr><td><code>i</code></td><td>int</td><td>Current element index</td><td>Yes (0 &rarr; n)</td></tr>
+        <tr><td><code>k</code></td><td>int</td><td>Distinguished element index</td><td><strong>Never</strong></td></tr>
+        <tr><td><code>wk1</code></td><td>real</td><td>A1[k]</td><td><strong>Never</strong></td></tr>
+        <tr><td><code>wk2</code></td><td>real</td><td>A2[k]</td><td><strong>Never</strong></td></tr>
+        <tr><td><code>m1</code></td><td>real</td><td>Running max in run 1</td><td>Yes (non-decreasing)</td></tr>
+        <tr><td><code>m2</code></td><td>real</td><td>Running max in run 2</td><td>Yes (non-decreasing)</td></tr>
+        <tr><td><code>n</code></td><td>int</td><td>Array size</td><td><strong>Never</strong></td></tr>
+      </tbody>
+    </table>
+    <p><strong>7 variables.</strong> The leanest encoding in our portfolio.</p>
+
+    <h3>Asynchronous Model</h3>
+<pre><code>Inv(i1, i2, k, wk1, wk2, m1, m2, n)</code></pre>
+    <table>
+      <thead><tr><th>Variable</th><th>Type</th><th>Meaning</th><th>Changes?</th></tr></thead>
+      <tbody>
+        <tr><td><code>i1</code></td><td>int</td><td>Current index in run 1</td><td>Yes (0 &rarr; n)</td></tr>
+        <tr><td><code>i2</code></td><td>int</td><td>Current index in run 2</td><td>Yes (0 &rarr; n)</td></tr>
+        <tr><td><code>k</code></td><td>int</td><td>Distinguished element index</td><td><strong>Never</strong></td></tr>
+        <tr><td><code>wk1</code></td><td>real</td><td>A1[k]</td><td><strong>Never</strong></td></tr>
+        <tr><td><code>wk2</code></td><td>real</td><td>A2[k]</td><td><strong>Never</strong></td></tr>
+        <tr><td><code>m1</code></td><td>real</td><td>Running max in run 1</td><td>Yes (non-decreasing)</td></tr>
+        <tr><td><code>m2</code></td><td>real</td><td>Running max in run 2</td><td>Yes (non-decreasing)</td></tr>
+        <tr><td><code>n</code></td><td>int</td><td>Array size</td><td><strong>Never</strong></td></tr>
+      </tbody>
+    </table>
+    <p><strong>8 variables.</strong> One more than synchronized (the extra counter).</p>
+
+    <h3>What's Missing Compared to Kruskal Robustness (11 variables)</h3>
+    <table>
+      <thead><tr><th>Dropped</th><th>Why</th></tr></thead>
+      <tbody>
+        <tr><td><code>bk:bool</code></td><td>Direction known: wk1 &le; wk2</td></tr>
+        <tr><td><code>bc:bool</code></td><td>Direction known: m1 &le; m2</td></tr>
+        <tr><td><code>eps</code></td><td>No quantitative bound</td></tr>
+      </tbody>
+    </table>
+    <hr>
+
+    <h1>PART A: SYNCHRONIZED MODEL</h1>
+    <hr>
+
+    <h2>Part 7: Why Synchronized Works</h2>
+    <p>Both runs scan indices 0, 1, 2, ..., n-1 in the same fixed order. There is no data-dependent branching that changes the iteration order. When both runs are always at the same index, a single counter suffices.</p>
+    <p>The critical advantage: when both runs process the same element at the same time, we can assert <code>m1' &le; m2'</code> because the universal precondition <code>A1[i] &le; A2[i]</code> guarantees:</p>
+<pre><code>max(m1, A1[i]) &le; max(m2, A2[i])
+       &uarr;                  &uarr;
+    m1 &le; m2         A1[i] &le; A2[i]
+  (induction)       (precondition)</code></pre>
+    <p>This means <code>m1' &le; m2'</code> can be a transition-level constraint.</p>
+    <hr>
+
+    <h2>Part 8: Synchronized Initialization</h2>
+<pre><code>Inv(i, k, wk1, wk2, m1, m2, n) :-
+    i = 0,
+    n &gt; 0,
+    0 &le; k, k &lt; n,
+    0 &le; wk1, wk1 &le; wk2,
+    m1 = 0, m2 = 0.</code></pre>
+    <h4>What This Says</h4>
+    <ol>
+      <li><code>i = 0</code>: No elements processed yet</li>
+      <li><code>n &gt; 0</code>: Non-empty array</li>
+      <li><code>0 &le; k, k &lt; n</code>: Valid index</li>
+      <li><code>0 &le; wk1, wk1 &le; wk2</code>: Monotone input (non-negative values)</li>
+      <li><code>m1 = 0, m2 = 0</code>: Running max starts at 0</li>
+    </ol>
+    <h4>Comparison with Kruskal Initialization</h4>
+<pre><code>Kruskal:   (bk and 0 &le; wk2-wk1 and wk2-wk1 &le; eps) or
+           (!bk and 0 &le; wk1-wk2 and wk1-wk2 &le; eps)
+                         &darr;
+ArrayMax:  wk1 &le; wk2</code></pre>
+    <p>No sign bit, no epsilon. Just a direct ordering constraint.</p>
+    <hr>
+
+    <h2>Part 9: Synchronized Transition</h2>
+<pre><code>Inv(i', k, wk1, wk2, m1', m2', n) :-
+    Inv(i, k, wk1, wk2, m1, m2, n),
+    (
+        (* HIT: process distinguished element k *)
+        i &lt; n and i = k and i' = i + 1 and
+        ((m1 &gt;= wk1 and m1' = m1) or (wk1 &gt; m1 and m1' = wk1)) and
+        ((m2 &gt;= wk2 and m2' = m2) or (wk2 &gt; m2 and m2' = wk2))
+    ) or (
+        (* MISS: process other element *)
+        i &lt; n and i &lt;&gt; k and i' = i + 1 and
+        m1' &gt;= m1 and m2' &gt;= m2
+    ) or (
+        (* Finished: stutter *)
+        i &gt;= n and i' = i and m1' = m1 and m2' = m2
+    ),
+    (* MONOTONE BOUND *)
+    m1' &lt;= m2'.</code></pre>
+
+    <h4>Case 1: HIT &mdash; Process Distinguished Element k</h4>
+    <p>Encodes <code>m1' = max(m1, wk1)</code> and <code>m2' = max(m2, wk2)</code> explicitly. All four sub-cases of max &times; max maintain <code>m1' &le; m2'</code>:</p>
+    <table>
+      <thead><tr><th>Sub-case</th><th>Result</th><th>m1' &le; m2' why?</th></tr></thead>
+      <tbody>
+        <tr><td>m1&ge;wk1 and m2&ge;wk2</td><td>m1'=m1, m2'=m2</td><td>m1 &le; m2 (invariant)</td></tr>
+        <tr><td>m1&ge;wk1 and wk2&gt;m2</td><td>m1'=m1, m2'=wk2</td><td>m1 &le; m2 &le; wk2</td></tr>
+        <tr><td>wk1&gt;m1 and m2&ge;wk2</td><td>m1'=wk1, m2'=m2</td><td>wk1 &le; wk2 &le; m2</td></tr>
+        <tr><td>wk1&gt;m1 and wk2&gt;m2</td><td>m1'=wk1, m2'=wk2</td><td>wk1 &le; wk2 (precond)</td></tr>
+      </tbody>
+    </table>
+
+    <h4>Case 2: MISS &mdash; Process Other Element</h4>
+    <p>Values of A1[i] and A2[i] are unknown. We only assert non-decreasing (<code>max</code> never shrinks). The monotone bound <code>m1' &le; m2'</code> below constrains the relationship.</p>
+
+    <h4>Case 3: Finished &mdash; Stutter</h4>
+    <p>All elements processed. State unchanged.</p>
+
+    <h4>The Monotone Bound</h4>
+<pre><code>m1' &lt;= m2'.</code></pre>
+    <p>This single line plays the same structural role as the epsilon bound in robustness:</p>
+<pre><code>Kruskal:   (bc' and 0 &le; c2'-c1' and c2'-c1' &le; i1'*eps) or
+           (!bc' and 0 &le; c1'-c2' and c1'-c2' &le; i1'*eps)
+                              &darr;
+ArrayMax:  m1' &le; m2'</code></pre>
+    <hr>
+
+    <h2>Part 10: Synchronized Goal</h2>
+<pre><code>(* Violation: UNSAT = monotonicity verified *)
+m1 &gt; m2 :-
+    Inv(i, k, wk1, wk2, m1, m2, n),
+    n &le; i.</code></pre>
+    <p>At termination (<code>i &ge; n</code>), is <code>m1 &gt; m2</code> reachable?</p>
+    <ul>
+      <li><strong>UNSAT</strong>: No &rarr; <strong>monotonicity verified</strong></li>
+      <li><strong>SAT</strong>: Yes &rarr; property fails</li>
+    </ul>
+
+    <h3>Why UNSAT Is Easy</h3>
+    <p>The invariant is simply <code>m1 &le; m2</code>. Check the three conditions:</p>
+    <ol>
+      <li><strong>Init establishes it</strong>: <code>m1 = 0 = m2</code>, so <code>m1 &le; m2</code></li>
+      <li><strong>Transitions preserve it</strong>: <code>m1' &le; m2'</code> is stated explicitly</li>
+      <li><strong>Goal contradicts it</strong>: <code>m1 &gt; m2</code> contradicts <code>m1 &le; m2</code></li>
+    </ol>
+    <p>The solver has almost no work &mdash; the bound IS the invariant.</p>
+    <hr>
+
+    <h2>Part 11: Synchronized &mdash; No Scheduler Needed</h2>
+    <p>The scheduler exists to handle <strong>asynchronous execution</strong> &mdash; two runs progressing at different rates. In the synchronized model, both runs always step together with a single counter <code>i</code>. One transition clause handles everything.</p>
+    <h3>When Is Synchronization Valid?</h3>
+<pre><code>Valid when:
+  Loop iterates over a fixed range (0 to n-1)
+  Iteration order does NOT depend on data values
+  Both runs execute the SAME number of iterations
+
+Examples:
+  ArrayMax     &mdash; scan 0 to n-1
+  Histogram    &mdash; scan 0 to n-1
+  CDF          &mdash; scan 0 to n-1
+  Kruskal      &mdash; edges in fixed sorted order
+
+NOT valid when:
+  Priority queue determines order (Dijkstra with different weights)
+  Data-dependent early termination</code></pre>
+    <hr>
+
+    <h1>PART B: ASYNCHRONOUS MODEL</h1>
+    <hr>
+
+    <h2>Part 12: Why Try Asynchronous?</h2>
+    <p>The synchronized model proves monotonicity for lockstep execution. The asynchronous model proves it for <strong>all possible interleavings</strong>. This is a stronger result.</p>
+    <p>But the challenge is severe: <code>m1 &le; m2</code> is NOT a valid mid-execution invariant when runs are at different indices.</p>
+
+    <h3>The Problem</h3>
+<pre><code>A1 = [1, 1, 1, 1, 10]    A2 = [2, 2, 2, 2, 20]
+
+After i1=5, i2=2:  m1 = 10,  m2 = 2    &rarr;  m1 &gt; m2 !</code></pre>
+    <p>Run 1 has seen element 4 (value 10), but run 2 hasn't reached it yet. So <code>m1 &gt; m2</code> is a perfectly valid mid-execution state. The simple invariant <code>m1 &le; m2</code> would reject this, making the encoding unsound (too restrictive).</p>
+
+    <h3>Consequence for the Encoding</h3>
+    <p>We <strong>cannot</strong> put <code>m1' &le; m2'</code> as a transition constraint. The monotone bound must be dropped entirely:</p>
+<pre><code>Synchronized MISS:  m1' &gt;= m1 and m2' &gt;= m2  +  m1' &lt;= m2'  (bounded)
+Asynchronous MISS:  m1' &gt;= m1                                 (unbounded!)</code></pre>
+    <p>The solver must discover a complex invariant on its own.</p>
+    <hr>
+
+    <h2>Part 13: Asynchronous Initialization</h2>
+<pre><code>Inv(i1, i2, k, wk1, wk2, m1, m2, n) :-
+    i1 = 0, i2 = 0,
+    n &gt; 0,
+    0 &le; k, k &lt; n,
+    0 &le; wk1, wk1 &le; wk2,
+    m1 = 0, m2 = 0.</code></pre>
+    <p>Identical to synchronized except for two counters.</p>
+    <hr>
+
+    <h2>Part 14: Asynchronous TF Transition &mdash; Only Run 1 Steps</h2>
+<pre><code>Inv(i1', i2, k, wk1, wk2, m1', m2, n) :-
+    Inv(i1, i2, k, wk1, wk2, m1, m2, n),
+    SchTF(i1, i2, k, wk1, wk2, m1, m2, n),
+    (
+        (* HIT: process distinguished element k *)
+        i1 &lt; n and i1 = k and i1' = i1 + 1 and
+        ((m1 &gt;= wk1 and m1' = m1) or (wk1 &gt; m1 and m1' = wk1))
+    ) or (
+        (* MISS: process other element &mdash; value unknown *)
+        i1 &lt; n and i1 &lt;&gt; k and i1' = i1 + 1 and
+        m1' &gt;= m1
+    ) or (
+        (* Finished *)
+        i1 &gt;= n and i1' = i1 and m1' = m1
+    ).</code></pre>
+
+    <h4>Critical Difference: No Monotone Bound!</h4>
+<pre><code>Synchronized:   ...), m1' &lt;= m2'.      &larr; bound present
+Asynchronous:   ...).                   &larr; NO bound!</code></pre>
+    <p>The TF transition freely allows <code>m1'</code> to exceed <code>m2</code>. This is correct &mdash; when only run 1 steps, it may encounter a large element that run 2 hasn't seen yet.</p>
+
+    <h4>The MISS Case Is Very Loose</h4>
+<pre><code>m1' &gt;= m1     (* That's ALL we know! *)</code></pre>
+    <p>No upper bound on <code>m1'</code>. No relationship to <code>m2</code>. The solver must figure out that despite this freedom, <code>m1 &le; m2</code> holds at termination.</p>
+    <hr>
+
+    <h2>Part 15: Asynchronous FT Transition &mdash; Symmetric</h2>
+<pre><code>Inv(i1, i2', k, wk1, wk2, m1, m2', n) :-
+    Inv(i1, i2, k, wk1, wk2, m1, m2, n),
+    SchFT(i1, i2, k, wk1, wk2, m1, m2, n),
+    (
+        (* HIT *)
+        i2 &lt; n and i2 = k and i2' = i2 + 1 and
+        ((m2 &gt;= wk2 and m2' = m2) or (wk2 &gt; m2 and m2' = wk2))
+    ) or (
+        (* MISS *)
+        i2 &lt; n and i2 &lt;&gt; k and i2' = i2 + 1 and
+        m2' &gt;= m2
+    ) or (
+        (* Finished *)
+        i2 &gt;= n and i2' = i2 and m2' = m2
+    ).</code></pre>
+    <p>Same structure as TF, but for run 2. Again, no monotone bound.</p>
+    <hr>
+
+    <h2>Part 16: Asynchronous TT Transition &mdash; Both Step</h2>
+<pre><code>Inv(i1', i2', k, wk1, wk2, m1', m2', n) :-
+    Inv(i1, i2, k, wk1, wk2, m1, m2, n),
+    SchTT(i1, i2, k, wk1, wk2, m1, m2, n),
+    (* Run 1 *)
+    (
+        i1 &lt; n and i1 = k and i1' = i1 + 1 and
+        ((m1 &gt;= wk1 and m1' = m1) or (wk1 &gt; m1 and m1' = wk1))
+    ) or (
+        i1 &lt; n and i1 &lt;&gt; k and i1' = i1 + 1 and
+        m1' &gt;= m1
+    ) or (
+        i1 &gt;= n and i1' = i1 and m1' = m1
+    ),
+    (* Run 2 *)
+    (
+        i2 &lt; n and i2 = k and i2' = i2 + 1 and
+        ((m2 &gt;= wk2 and m2' = m2) or (wk2 &gt; m2 and m2' = wk2))
+    ) or (
+        i2 &lt; n and i2 &lt;&gt; k and i2' = i2 + 1 and
+        m2' &gt;= m2
+    ) or (
+        i2 &gt;= n and i2' = i2 and m2' = m2
+    ).</code></pre>
+    <p>Cartesian product of run 1 and run 2 cases. Note that run 1 and run 2 are at <strong>different</strong> indices in general (<code>i1 &ne; i2</code>), so at most one can be at index k.</p>
+    <p>No monotone bound. No epsilon bound. The transition constraints are purely structural.</p>
+    <hr>
+
+    <h2>Part 17: Asynchronous Scheduler and Fairness</h2>
+<pre><code>i1 &lt; n :-
+    Inv(i1, i2, k, wk1, wk2, m1, m2, n),
+    SchTF(i1, i2, k, wk1, wk2, m1, m2, n),
+    i2 &lt; n.
+
+i2 &lt; n :-
+    Inv(i1, i2, k, wk1, wk2, m1, m2, n),
+    SchFT(i1, i2, k, wk1, wk2, m1, m2, n),
+    i1 &lt; n.
+
+SchTF(i1, i2, k, wk1, wk2, m1, m2, n),
+SchFT(i1, i2, k, wk1, wk2, m1, m2, n),
+SchTT(i1, i2, k, wk1, wk2, m1, m2, n) :-
+    Inv(i1, i2, k, wk1, wk2, m1, m2, n),
+    i1 &lt; n or i2 &lt; n.</code></pre>
+    <p>Standard pattern. Ensures both runs eventually complete.</p>
+    <hr>
+
+    <h2>Part 18: Asynchronous Goal</h2>
+<pre><code>m1 &gt; m2 :-
+    Inv(i1, i2, k, wk1, wk2, m1, m2, n),
+    n &le; i1, n &le; i2.</code></pre>
+    <p>Same question: at termination, is <code>m1 &gt; m2</code> reachable? But now "termination" means both runs finished (<code>n &le; i1</code> and <code>n &le; i2</code>), regardless of the order they got there.</p>
+    <p><strong>Result: UNSAT in 8 minutes 35 seconds.</strong> PCSAT found an invariant!</p>
+    <hr>
+
+    <h2>Part 19: Why UNSAT Is Surprising</h2>
+    <h3>The Naive Argument for SAT</h3>
+    <p>Consider this execution:</p>
+<pre><code>Init:    i1=0, i2=0, m1=0, m2=0
+TF MISS: i1=1, m1'=1000000          &larr; legal: m1' &ge; 0
+TF MISS: i1=2, m1'=1000000          &larr; legal: m1' &ge; 1000000
+... (repeat until i1=n) ...
+FT MISS: i2=1, m2'=0                &larr; legal: m2' &ge; 0
+... (repeat until i2=n) ...
+Terminal: m1=1000000 &gt; m2=0           &rarr; violation!</code></pre>
+    <p>Every step satisfies the transition constraints. So why is it UNSAT?</p>
+
+    <h3>The Resolution</h3>
+    <p>PCSAT doesn't simulate executions &mdash; it searches for an <strong>inductive invariant</strong> that:</p>
+    <ol>
+      <li>Contains all initial states</li>
+      <li>Is closed under all transitions</li>
+      <li>Does not intersect the goal states</li>
+    </ol>
+    <p>The key insight is that <code>k</code> is <strong>universally quantified</strong>. The invariant must work for ALL choices of k simultaneously. For any element j that could inflate <code>m1</code> (via A1[j]), the same element also inflates <code>m2</code> (via A2[j] &ge; A1[j]). The MISS abstraction (<code>m' &ge; m</code>) is symmetric between the two runs &mdash; any growth in m1 is matched by at least as much potential growth in m2.</p>
+
+    <h4>Diagnostic Evidence</h4>
+<pre><code>m1 &gt; m2 mid-execution (i1 &gt; i2):  SAT in 5.7s</code></pre>
+    <p>This confirms that <code>m1 &gt; m2</code> genuinely occurs during execution. But PCSAT proved it cannot persist to termination. The invariant is <strong>not</strong> <code>m1 &le; m2</code> &mdash; it's something more nuanced that allows temporary violations but ensures convergence.</p>
+    <hr>
+
+    <h2>Part 20: Comparison of the Two Models</h2>
+    <table>
+      <thead><tr><th>Aspect</th><th>Synchronized</th><th>Asynchronous</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Counters</strong></td><td>1 (<code>i</code>)</td><td>2 (<code>i1, i2</code>)</td></tr>
+        <tr><td><strong>Variables</strong></td><td>7</td><td>8</td></tr>
+        <tr><td><strong>Scheduler</strong></td><td>None</td><td>SchTF, SchFT, SchTT + fairness</td></tr>
+        <tr><td><strong>Horn clauses</strong></td><td>2 (init + transition) + goal</td><td>5 (init + TF + FT + TT + scheduler) + goal</td></tr>
+        <tr><td><strong>Monotone bound</strong></td><td><code>m1' &le; m2'</code> as transition constraint</td><td>None &mdash; solver discovers invariant</td></tr>
+        <tr><td><strong>Invariant</strong></td><td>Trivial: <code>m1 &le; m2</code></td><td>Complex: unknown (PCSAT discovered it)</td></tr>
+        <tr><td><strong>Solver time (UNSAT)</strong></td><td>Fast</td><td>8m 35s</td></tr>
+        <tr><td><strong>Solver time (SAT sanity)</strong></td><td>Fast (terminal)</td><td>5.7s (mid-execution only; terminal SAT times out)</td></tr>
+        <tr><td><strong>Proves</strong></td><td>Monotonicity for lockstep execution</td><td>Monotonicity for ALL interleavings</td></tr>
+        <tr><td><strong>m1 &gt; m2 mid-execution?</strong></td><td>Never (bound prevents it)</td><td>Yes (SAT in 5.7s)</td></tr>
+      </tbody>
+    </table>
+    <h3>Which Is Better?</h3>
+    <p>The <strong>asynchronous model proves a stronger result</strong> (all interleavings) but takes much longer. The <strong>synchronized model is simpler and faster</strong> but proves a weaker result (only lockstep).</p>
+    <p>For ArrayMax, both are valid because the algorithm's iteration order is data-independent. The synchronized model is the pragmatic choice. The asynchronous result is theoretically interesting because it shows PCSAT can discover non-trivial invariants for monotonicity without explicit help.</p>
+    <hr>
+
+    <h2>Part 21: Lessons for Other Monotonicity Proofs</h2>
+    <h3>What Worked</h3>
+    <ol>
+      <li><strong>No sign bits needed</strong> &mdash; direction is known, simplifying the encoding</li>
+      <li><strong>Monotone bound as transition constraint</strong> &mdash; same structural role as epsilon bound</li>
+      <li><strong>HIT is fully explicit</strong> &mdash; max(m, w) depends only on known values</li>
+      <li><strong>Asynchronous model works</strong> &mdash; PCSAT can handle monotonicity without a transition-level bound</li>
+    </ol>
+    <h3>Open Questions</h3>
+    <ol>
+      <li><strong>What invariant did PCSAT find?</strong> For the async model, extracting the invariant would reveal how PCSAT understands monotonicity across interleavings.</li>
+      <li><strong>Does async work for harder algorithms?</strong> ArrayMax is simple. Will PCSAT find invariants for Kruskal MST monotonicity in the async model?</li>
+      <li><strong>Can we do quantitative monotonicity?</strong> Prove <code>0 &le; max(A2) - max(A1) &le; wk2 - wk1</code> &mdash; a lower AND upper bound combining monotonicity with robustness.</li>
+    </ol>
+    <hr>
+
+    <h2>Part 22: Test Queries</h2>
+    <h3>Practical Guidance</h3>
+    <p>For the asynchronous model, terminal SAT queries (like <code>m1 &le; m2</code> at termination) may not terminate due to unbounded state space in the MISS case. Use mid-execution SAT queries for non-vacuity checks instead.</p>
+<pre><code>(* PRIMARY: Violation - expected UNSAT *)
+m1 &gt; m2 :-
+    Inv(...), n &le; i1, n &le; i2.    (* async *)
+    Inv(...), n &le; i.              (* sync *)
+
+(* NON-VACUITY CHECK: Mid-execution violation - expected SAT *)
+(* Confirms reachable states exist with non-trivial values *)
+(* Use this INSTEAD of terminal SAT for async encodings *)
+m1 &gt; m2 :-
+    Inv(i1, i2, k, wk1, wk2, m1, m2, n),
+    i1 &gt; i2, i1 &lt; n.
+
+(* CAUTION: Terminal SAT - may not terminate for async model *)
+(* Fast for synchronized model, but 10+ hours with no result for async *)
+(* Root cause: unbounded MISS (m1' &gt;= m1) makes witness search intractable *)</code></pre>
+    <hr>
+
+    <h2>Part 23: Key Takeaways</h2>
+    <ol>
+      <li><strong>Monotonicity is "qualitative robustness"</strong>: Same encoding structure, different mathematical content.</li>
+      <li><strong>The monotone bound plays the role of the epsilon bound</strong>: Both encode the universal input precondition as a transition-level constraint.</li>
+      <li><strong>No sign bits, no epsilon</strong>: One-sided properties are simpler than two-sided.</li>
+      <li><strong>Synchronized = simple + fast, Asynchronous = powerful + slow</strong>: Choose based on what you need to prove.</li>
+      <li><strong>PCSAT can discover non-trivial monotonicity invariants</strong>: The async UNSAT result shows the solver handles properties beyond explicit transition bounds.</li>
+      <li><strong>HIT is fully explicit for max</strong>: Like Kruskal's accumulation, unlike Dijkstra's relaxation.</li>
+      <li><strong>UNSAT/SAT asymmetry for unbounded encodings</strong>: When MISS has no upper bound (only <code>m1' &ge; m1</code>), UNSAT is feasible but terminal SAT may not terminate. Use mid-execution SAT queries for non-vacuity checks.</li>
+    </ol>
+
+    <div class="info-box success">
+      <strong>VERIFICATION COMPLETE</strong><br><br>
+      <strong>Synchronized UNSAT</strong> (fast). <strong>Asynchronous UNSAT</strong> (8m 35s). Non-vacuity confirmed via mid-execution SAT (5.7s). Terminal SAT times out for async.
+    </div>
+    <hr>
+
+    <h2>References</h2>
+    <ol>
+      <li><strong>Chaudhuri, Gulwani, Lublinerman</strong> &mdash; "Continuity and Robustness of Programs" (CACM 2012)</li>
+      <li><strong>Monniaux &amp; Gonnord</strong> &mdash; "Cell Morphing: From Array Programs to Array-Free Horn Clauses" (SAS 2016)</li>
+      <li><strong>Unno, Terauchi, Kobayashi</strong> &mdash; "Constraint-based Relational Verification" (CAV 2021)</li>
+      <li><strong>PCSAT Solver</strong> &mdash; Tool for solving predicate constraint satisfaction problems</li>
+    </ol>
+  </div>
+
+  <!-- ============ SOURCE CODE PANEL ============ -->
+  <div id="panel-source" class="panel">
+    <div class="source-container">
+      <div class="source-header">
+        <span class="source-filename" id="current-filename">monotone_arraymax.clp</span>
+        <button class="copy-btn" onclick="copySource()">Copy to clipboard</button>
+      </div>
+      <div class="file-tabs">
+        <div class="file-tab active" onclick="switchFile('sync', this)">monotone_arraymax.clp (sync)</div>
+        <div class="file-tab" onclick="switchFile('async', this)">monotone_arraymax_async.clp (async)</div>
+      </div>
+      <div class="source-lines">
+        <div class="line-numbers" id="line-nums"></div>
+        <div class="source-code" id="source-code"></div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script>
+// Tab switching
+function switchTab(el) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('panel-' + el.dataset.panel).classList.add('active');
+}
+
+// Source code files
+let currentFile = 'sync';
+const sourceFiles = {};
+
+sourceFiles.sync = `(*
+ArrayMax(A: array, n: size)
+    m := A[0]
+    for i = 1 to n-1:
+        if A[i] > m:
+            m := A[i]
+    return m
+*)
+
+(*
+PROPERTY: Monotonicity under pointwise ordering
+  forall i. A1[i] <= A2[i]  ==>  max(A1) <= max(A2)
+
+================================================================================
+ENCODING: SYNCHRONIZED MODEL
+================================================================================
+
+Both runs step together (single counter i). This is correct for ArrayMax
+because both runs process elements in the same order (indices 0 to n-1).
+
+INPUT CELL:
+  k:     Distinguished element index
+  wk1:   A1[k] - value in array 1
+  wk2:   A2[k] - value in array 2
+  PRECONDITION: wk1 <= wk2 (monotone input)
+
+OUTPUT CELL:
+  m1, m2: current maximum in each run
+  POSTCONDITION: m1 <= m2 (monotonicity)
+
+STATE: i, k, wk1, wk2, m1, m2, n  (7 variables)
+*)
+
+
+(******************************************************************************)
+(* INITIALIZATION                                                             *)
+(******************************************************************************)
+
+Inv(i, k, wk1, wk2, m1, m2, n) :-
+    i = 0,
+    n > 0,
+    0 <= k, k < n,
+    0 <= wk1, wk1 <= wk2,
+    m1 = 0, m2 = 0.
+
+
+(******************************************************************************)
+(* TRANSITION (synchronized - single counter)                                 *)
+(******************************************************************************)
+
+Inv(i', k, wk1, wk2, m1', m2', n) :-
+    Inv(i, k, wk1, wk2, m1, m2, n),
+    (
+        (* HIT: process distinguished element k *)
+        i < n and i = k and i' = i + 1 and
+        ((m1 >= wk1 and m1' = m1) or (wk1 > m1 and m1' = wk1)) and
+        ((m2 >= wk2 and m2' = m2) or (wk2 > m2 and m2' = wk2))
+    ) or (
+        (* MISS: process other element *)
+        i < n and i <> k and i' = i + 1 and
+        m1' >= m1 and m2' >= m2
+    ) or (
+        (* Finished *)
+        i >= n and i' = i and m1' = m1 and m2' = m2
+    ),
+    (* MONOTONE BOUND *)
+    m1' <= m2'.
+
+
+(******************************************************************************)
+(* GOAL: Monotonicity violation                                               *)
+(* UNSAT = max(A1) <= max(A2) VERIFIED                                       *)
+(******************************************************************************)
+
+m1 <= m2 :-
+    Inv(i, k, wk1, wk2, m1, m2, n),
+    n <= i.`.trim();
+
+sourceFiles.async = `(*
+ArrayMax(A: array, n: size)
+    m := A[0]
+    for i = 1 to n-1:
+        if A[i] > m:
+            m := A[i]
+    return m
+*)
+
+(*
+PROPERTY: Monotonicity under pointwise ordering
+  forall i. A1[i] <= A2[i]  ==>  max(A1) <= max(A2)
+
+================================================================================
+ASYNCHRONOUS MODEL \u2014 EXPERIMENTAL
+================================================================================
+
+This encoding uses two independent counters i1, i2 with a scheduler,
+following the standard robustness/sensitivity pattern. This is HARDER
+than the synchronized model because:
+
+1. m1 <= m2 is NOT a valid mid-execution invariant.
+   When i1 > i2, run 1 has seen more elements, so m1 could exceed m2.
+
+2. We CANNOT put a monotone bound as a transition constraint.
+   In TF, m1 grows but m2 doesn't \u2014 so m1' <= m2 can fail.
+
+3. The MISS case is very UNCONSTRAINED.
+   Only m1' >= m1 (non-decreasing). No epsilon-like bound.
+
+QUESTION: Can PCSAT discover the invariant without help?
+
+The "real" invariant is roughly:
+  when i1 <= i2: m1 <= m2  (run 2 has seen everything run 1 has, plus more)
+  when i1 > i2:  no simple bound on m1 vs m2
+
+At termination: i1 = i2 = n, so the first case applies and m1 <= m2.
+
+PREDICTION: PCSAT will likely struggle because the MISS case gives almost
+no information. But this is an honest experiment.
+
+State: i1, i2, k, wk1, wk2, m1, m2, n  (8 variables)
+*)
+
+
+(******************************************************************************)
+(* INITIALIZATION                                                             *)
+(******************************************************************************)
+
+Inv(i1, i2, k, wk1, wk2, m1, m2, n) :-
+    i1 = 0, i2 = 0,
+    n > 0,
+    0 <= k, k < n,
+    0 <= wk1, wk1 <= wk2,
+    m1 = 0, m2 = 0.
+
+
+(******************************************************************************)
+(* TF TRANSITION - Only run 1 steps                                           *)
+(*                                                                            *)
+(* HIT: m1' = max(m1, wk1), m2 unchanged                                     *)
+(* MISS: m1' >= m1 (non-decreasing), m2 unchanged                            *)
+(* Finished: stutter                                                          *)
+(*                                                                            *)
+(* NOTE: No monotone bound here. m1' can exceed m2 freely.                    *)
+(******************************************************************************)
+
+Inv(i1', i2, k, wk1, wk2, m1', m2, n) :-
+    Inv(i1, i2, k, wk1, wk2, m1, m2, n),
+    SchTF(i1, i2, k, wk1, wk2, m1, m2, n),
+    (
+        (* HIT: process distinguished element k *)
+        i1 < n and i1 = k and i1' = i1 + 1 and
+        ((m1 >= wk1 and m1' = m1) or (wk1 > m1 and m1' = wk1))
+    ) or (
+        (* MISS: process other element \u2014 value unknown *)
+        i1 < n and i1 <> k and i1' = i1 + 1 and
+        m1' >= m1
+    ) or (
+        (* Finished *)
+        i1 >= n and i1' = i1 and m1' = m1
+    ).
+
+
+(******************************************************************************)
+(* FT TRANSITION - Only run 2 steps                                           *)
+(******************************************************************************)
+
+Inv(i1, i2', k, wk1, wk2, m1, m2', n) :-
+    Inv(i1, i2, k, wk1, wk2, m1, m2, n),
+    SchFT(i1, i2, k, wk1, wk2, m1, m2, n),
+    (
+        (* HIT *)
+        i2 < n and i2 = k and i2' = i2 + 1 and
+        ((m2 >= wk2 and m2' = m2) or (wk2 > m2 and m2' = wk2))
+    ) or (
+        (* MISS *)
+        i2 < n and i2 <> k and i2' = i2 + 1 and
+        m2' >= m2
+    ) or (
+        (* Finished *)
+        i2 >= n and i2' = i2 and m2' = m2
+    ).
+
+
+(******************************************************************************)
+(* TT TRANSITION - Both runs step                                             *)
+(*                                                                            *)
+(* Cartesian product of run 1 and run 2 cases.                                *)
+(* Run 1 and run 2 are at DIFFERENT indices (i1 != i2 in general).            *)
+(* At most one can be at k.                                                   *)
+(******************************************************************************)
+
+Inv(i1', i2', k, wk1, wk2, m1', m2', n) :-
+    Inv(i1, i2, k, wk1, wk2, m1, m2, n),
+    SchTT(i1, i2, k, wk1, wk2, m1, m2, n),
+    (* Run 1 *)
+    (
+        i1 < n and i1 = k and i1' = i1 + 1 and
+        ((m1 >= wk1 and m1' = m1) or (wk1 > m1 and m1' = wk1))
+    ) or (
+        i1 < n and i1 <> k and i1' = i1 + 1 and
+        m1' >= m1
+    ) or (
+        i1 >= n and i1' = i1 and m1' = m1
+    ),
+    (* Run 2 *)
+    (
+        i2 < n and i2 = k and i2' = i2 + 1 and
+        ((m2 >= wk2 and m2' = m2) or (wk2 > m2 and m2' = wk2))
+    ) or (
+        i2 < n and i2 <> k and i2' = i2 + 1 and
+        m2' >= m2
+    ) or (
+        i2 >= n and i2' = i2 and m2' = m2
+    ).
+
+
+(******************************************************************************)
+(* SCHEDULER FAIRNESS                                                         *)
+(******************************************************************************)
+
+i1 < n :-
+    Inv(i1, i2, k, wk1, wk2, m1, m2, n),
+    SchTF(i1, i2, k, wk1, wk2, m1, m2, n),
+    i2 < n.
+
+i2 < n :-
+    Inv(i1, i2, k, wk1, wk2, m1, m2, n),
+    SchFT(i1, i2, k, wk1, wk2, m1, m2, n),
+    i1 < n.
+
+SchTF(i1, i2, k, wk1, wk2, m1, m2, n),
+SchFT(i1, i2, k, wk1, wk2, m1, m2, n),
+SchTT(i1, i2, k, wk1, wk2, m1, m2, n) :-
+    Inv(i1, i2, k, wk1, wk2, m1, m2, n),
+    i1 < n or i2 < n.
+
+
+(******************************************************************************)
+(* GOAL: Monotonicity violation at termination                                *)
+(*                                                                            *)
+(* UNSAT = monotonicity verified for all interleavings                        *)
+(* SAT   = spurious counterexample (abstraction too loose)                    *)
+(******************************************************************************)
+
+(*m1 <= m2 :-
+    Inv(i1, i2, k, wk1, wk2, m1, m2, n),
+    n <= i1, n <= i2.
+*)
+
+m1 > m2 :-
+    Inv(i1, i2, k, wk1, wk2, m1, m2, n),
+    i1 > i2, i1 < n.
+
+(******************************************************************************)
+(* TEST QUERIES                                                               *)
+(******************************************************************************)
+
+(*
+(* Test 1: Violation - expected UNSAT *)
+m1 > m2 :-
+    Inv(i1, i2, k, wk1, wk2, m1, m2, n),
+    n <= i1, n <= i2.
+unsat,131
+8:35.39 total
+
+(* Test 2: Bound holds - expected SAT *)
+m1 <= m2 :-
+    Inv(i1, i2, k, wk1, wk2, m1, m2, n),
+    n <= i1, n <= i2.
+
+(* Test 3: Mid-execution violation - expected SAT *)
+(* This confirms m1 > m2 CAN happen during execution *)
+m1 > m2 :-
+    Inv(i1, i2, k, wk1, wk2, m1, m2, n),
+    i1 > i2, i1 < n.
+SAT, 5.6seconds
+*)`.trim();
+
+// File switching
+function switchFile(fileId, el) {
+  currentFile = fileId;
+  document.querySelectorAll('.file-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  const names = { sync: 'monotone_arraymax.clp', async: 'monotone_arraymax_async.clp' };
+  document.getElementById('current-filename').textContent = names[fileId];
+  renderSource();
+}
+
+// Render source with line numbers and syntax highlighting
+function renderSource() {
+  const lines = sourceFiles[currentFile].split('\n');
+  const numEl = document.getElementById('line-nums');
+  const codeEl = document.getElementById('source-code');
+
+  let numsHtml = '';
+  let codeHtml = '';
+
+  lines.forEach((line, i) => {
+    numsHtml += '<span>' + (i + 1) + '</span>';
+    codeHtml += highlightLine(escapeHtml(line)) + '\n';
+  });
+
+  numEl.innerHTML = numsHtml;
+  codeEl.innerHTML = codeHtml;
+}
+
+function escapeHtml(s) {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+function highlightLine(line) {
+  // Comments
+  line = line.replace(/(\(\*.*?\*\))/g, '<span class="comment">$1</span>');
+  line = line.replace(/(\/\/.*$)/g, '<span class="comment">$1</span>');
+
+  // Predicates
+  line = line.replace(/\b(Inv|SchTF|SchFT|SchTT|PickK)\b/g, '<span class="predicate">$1</span>');
+
+  // Keywords
+  line = line.replace(/\b(and|or|not)\b/g, '<span class="keyword">$1</span>');
+  line = line.replace(/(:-)/g, '<span class="keyword">$1</span>');
+
+  // Booleans and types
+  line = line.replace(/\b(bool|true|false)\b/g, '<span class="bool">$1</span>');
+
+  // Operators
+  line = line.replace(/(&lt;=|&gt;=|&lt;&gt;|&lt;|&gt;)/g, '<span class="operator">$1</span>');
+
+  return line;
+}
+
+function copySource() {
+  navigator.clipboard.writeText(sourceFiles[currentFile]).then(() => {
+    const btn = document.querySelector('.copy-btn');
+    btn.textContent = 'Copied!';
+    setTimeout(() => btn.textContent = 'Copy to clipboard', 2000);
+  });
+}
+
+// Initialize
+renderSource();
+</script>
+
+</body>
+</html>

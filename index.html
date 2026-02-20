@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Relational Cell Morphing — Verification Examples</title>
+<title>Relational Cell Morphing &mdash; Verification Examples</title>
 <style>
   :root {
     --bg: #ffffff;
@@ -15,8 +15,15 @@
     --accent: #0969da;
     --accent2: #1a7f37;
     --accent3: #8250df;
+    --cost: #bf8700;
+    --danger: #cf222e;
     --code-bg: #f6f8fa;
     --highlight: #0969da1a;
+    --green-bg: rgba(26, 127, 55, 0.08);
+    --red-bg: rgba(207, 34, 46, 0.08);
+    --yellow-bg: rgba(191, 135, 0, 0.08);
+    --blue-bg: rgba(9, 105, 218, 0.08);
+    --purple-bg: rgba(130, 80, 223, 0.08);
   }
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
@@ -25,292 +32,567 @@
     color: var(--text);
     line-height: 1.6;
   }
-  header {
+
+  /* Hero */
+  .hero {
     background: var(--surface);
     border-bottom: 1px solid var(--border);
-    padding: 48px 0 40px;
-  }
-  .header-content {
-    max-width: 1100px;
-    margin: 0 auto;
-    padding: 0 24px;
+    padding: 56px 0 48px;
     text-align: center;
   }
-  .header-title {
-    font-size: 2rem;
-    font-weight: 600;
-    margin-bottom: 8px;
+  .hero-content { max-width: 800px; margin: 0 auto; padding: 0 24px; }
+  .hero-label {
+    font-size: 0.72rem; font-weight: 600; letter-spacing: 0.1em;
+    text-transform: uppercase; color: var(--accent); margin-bottom: 16px;
   }
-  .header-sub {
-    color: var(--text-dim);
-    font-size: 1rem;
-    max-width: 700px;
-    margin: 0 auto;
+  .hero h1 { font-size: 2.25rem; font-weight: 700; margin-bottom: 12px; }
+  .hero-sub { color: var(--text-dim); font-size: 1.05rem; max-width: 650px; margin: 0 auto; line-height: 1.7; }
+
+  /* Stats */
+  .stats {
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    gap: 1px; background: var(--border); border: 1px solid var(--border);
+    max-width: 1100px; margin: -24px auto 0; position: relative; z-index: 1;
+  }
+  .stat { background: var(--bg); padding: 20px; text-align: center; }
+  .stat-num { font-size: 2rem; font-weight: 700; color: var(--accent); display: block; }
+  .stat-label { font-size: 0.72rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-dim); margin-top: 4px; }
+
+  /* Main */
+  .container { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
+  section { padding: 48px 0; border-bottom: 1px solid var(--border); }
+  section:last-of-type { border-bottom: none; }
+
+  h2.section-title {
+    font-size: 0.75rem; font-weight: 600; letter-spacing: 0.12em;
+    text-transform: uppercase; color: var(--accent); margin-bottom: 24px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  h2.section-title::before { content: ''; width: 12px; height: 2px; background: var(--accent); }
+  h3 { font-size: 1.25rem; font-weight: 600; margin: 24px 0 12px; }
+  p { margin-bottom: 12px; }
+  p.dim { color: var(--text-dim); font-size: 0.925rem; }
+
+  /* Diagram */
+  .diagram {
+    display: grid; grid-template-columns: 1fr auto 1fr;
+    gap: 16px; align-items: center; margin: 24px 0;
+  }
+  .diagram-box {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 8px; padding: 20px;
+  }
+  .diagram-box h4 {
+    font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--accent); margin-bottom: 8px; font-weight: 600;
+  }
+  .diagram-box .formula {
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 0.875rem; color: var(--text);
+  }
+  .diagram-box .desc { font-size: 0.85rem; color: var(--text-dim); margin-top: 6px; }
+  .diagram-arrow { font-size: 1.5rem; color: var(--text-dim); text-align: center; }
+
+  /* Insight box */
+  .insight {
+    border-left: 3px solid var(--accent); padding: 16px 20px;
+    margin: 20px 0; background: var(--blue-bg); border-radius: 0 6px 6px 0;
+  }
+  .insight-label {
+    font-size: 0.72rem; font-weight: 600; letter-spacing: 0.08em;
+    text-transform: uppercase; color: var(--accent); margin-bottom: 6px;
+  }
+  .insight p { margin: 0; font-size: 0.925rem; }
+
+  /* Property cards */
+  .prop-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 20px 0; }
+  .prop-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 8px; padding: 20px; transition: border-color 0.15s;
+  }
+  .prop-card:hover { border-color: var(--accent); }
+  .prop-card h4 { font-size: 1.05rem; font-weight: 600; margin-bottom: 6px; }
+  .prop-card .formula {
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 0.8rem; color: var(--accent); display: block; margin-bottom: 8px;
+  }
+  .prop-card p { font-size: 0.875rem; color: var(--text-dim); margin: 0; }
+
+  /* Tables */
+  .table-wrap { overflow-x: auto; margin: 16px 0; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+  thead { background: var(--surface2); }
+  th {
+    font-size: 0.72rem; font-weight: 600; letter-spacing: 0.06em;
+    text-transform: uppercase; color: var(--text-dim);
+    padding: 10px 14px; text-align: left; white-space: nowrap;
+    border: 1px solid var(--border);
+  }
+  td { padding: 8px 14px; border: 1px solid var(--border); vertical-align: top; }
+  tr:hover td { background: var(--surface); }
+
+  /* Tags */
+  .tag {
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 0.72rem; padding: 2px 8px; border-radius: 4px;
+    white-space: nowrap; display: inline-block;
+  }
+  .tag-blue { background: var(--blue-bg); color: var(--accent); }
+  .tag-green { background: var(--green-bg); color: var(--accent2); }
+  .tag-yellow { background: var(--yellow-bg); color: var(--cost); }
+  .tag-red { background: var(--red-bg); color: var(--danger); }
+  .tag-purple { background: var(--purple-bg); color: var(--accent3); }
+
+  /* Code */
+  code {
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 0.85em; background: var(--surface2); padding: 2px 6px;
+    border-radius: 4px; color: var(--accent3);
+  }
+  pre {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 8px; padding: 16px 20px; overflow-x: auto;
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 0.8125rem; line-height: 1.6; margin: 16px 0;
   }
 
-  main {
-    max-width: 1100px;
-    margin: 0 auto;
-    padding: 40px 24px 80px;
+  /* Lesson cards */
+  .lesson-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 20px; }
+  .lesson {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 8px; padding: 20px;
   }
+  .lesson-num { font-size: 0.72rem; color: var(--accent); font-weight: 600; display: block; margin-bottom: 6px; }
+  .lesson strong { display: block; margin-bottom: 4px; }
+  .lesson p { font-size: 0.875rem; color: var(--text-dim); margin: 0; }
 
-  .intro {
-    margin-bottom: 40px;
-    max-width: 800px;
+  /* Example cards */
+  .section-heading {
+    font-size: 1.1rem; font-weight: 600; margin-bottom: 16px;
+    padding-bottom: 8px; border-bottom: 1px solid var(--border);
   }
-  .intro p {
-    color: var(--text-dim);
-    font-size: 0.95rem;
-    margin-bottom: 12px;
-  }
-
   .examples-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-    gap: 20px;
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 16px;
   }
   .card {
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 24px;
+    border: 1px solid var(--border); border-radius: 8px; padding: 20px;
     transition: border-color 0.15s, box-shadow 0.15s;
-    text-decoration: none;
-    color: inherit;
-    display: block;
+    text-decoration: none; color: inherit; display: block;
   }
-  .card:hover {
-    border-color: var(--accent);
-    box-shadow: 0 2px 12px rgba(9, 105, 218, 0.1);
-  }
+  .card:hover { border-color: var(--accent); box-shadow: 0 2px 12px rgba(9,105,218,0.1); }
   .card-category {
-    font-size: 0.75rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    margin-bottom: 8px;
+    font-size: 0.72rem; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.05em; margin-bottom: 6px;
   }
   .card-category.robustness { color: var(--accent); }
   .card-category.sensitivity { color: var(--accent3); }
-  .card-title {
-    font-size: 1.15rem;
-    font-weight: 600;
-    margin-bottom: 8px;
-  }
-  .card-desc {
-    color: var(--text-dim);
-    font-size: 0.875rem;
-    margin-bottom: 16px;
-    line-height: 1.5;
-  }
-  .card-tags {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-  }
-  .tag {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 20px;
-    padding: 2px 10px;
-    font-size: 0.75rem;
-    color: var(--text-dim);
-    white-space: nowrap;
+  .card-category.monotonicity { color: var(--accent2); }
+  .card-category.cost { color: var(--cost); }
+  .card-category.commutativity { color: var(--cost); }
+  .card-category.vacuous { color: var(--danger); }
+  .card-title { font-size: 1.05rem; font-weight: 600; margin-bottom: 6px; }
+  .card-desc { color: var(--text-dim); font-size: 0.85rem; margin-bottom: 12px; line-height: 1.5; }
+  .card-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+  .card-tag {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 20px; padding: 2px 10px; font-size: 0.72rem;
+    color: var(--text-dim); white-space: nowrap;
   }
 
-  .section-heading {
-    font-size: 1.1rem;
-    font-weight: 600;
-    margin-bottom: 16px;
-    padding-bottom: 8px;
-    border-bottom: 1px solid var(--border);
-  }
-
-  .method-overview {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 24px;
-    margin-bottom: 40px;
-  }
-  .method-overview h2 {
-    font-size: 1rem;
-    font-weight: 600;
-    margin-bottom: 12px;
-  }
-  .method-overview p {
-    color: var(--text-dim);
-    font-size: 0.875rem;
-    margin-bottom: 8px;
-  }
-  .method-overview p:last-child { margin-bottom: 0; }
-
-  .method-steps {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 16px;
-    margin-top: 16px;
-  }
-  .method-step {
-    text-align: center;
-    padding: 12px;
-  }
-  .method-step .step-num {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 28px;
-    height: 28px;
-    border-radius: 50%;
-    background: var(--accent);
-    color: white;
-    font-size: 0.8rem;
-    font-weight: 600;
-    margin-bottom: 8px;
-  }
-  .method-step .step-label {
-    font-size: 0.8rem;
-    font-weight: 600;
-    color: var(--text);
-    margin-bottom: 4px;
-  }
-  .method-step .step-desc {
-    font-size: 0.75rem;
-    color: var(--text-dim);
-  }
-
+  /* Footer */
   footer {
-    text-align: center;
-    padding: 24px;
-    border-top: 1px solid var(--border);
-    color: var(--text-dim);
-    font-size: 0.8rem;
+    text-align: center; padding: 24px; border-top: 1px solid var(--border);
+    color: var(--text-dim); font-size: 0.8rem;
   }
-  footer a {
-    color: var(--accent);
-    text-decoration: none;
-  }
+  footer a { color: var(--accent); text-decoration: none; }
   footer a:hover { text-decoration: underline; }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .hero h1 { font-size: 1.75rem; }
+    .stats { grid-template-columns: repeat(2, 1fr); }
+    .prop-grid, .lesson-grid { grid-template-columns: 1fr; }
+    .diagram { grid-template-columns: 1fr; }
+    .diagram-arrow { transform: rotate(90deg); }
+  }
 </style>
 </head>
 <body>
 
-<header>
-  <div class="header-content">
-    <div class="header-title">Relational Cell Morphing</div>
-    <div class="header-sub">Automated verification of array-manipulating algorithms using PCSAT</div>
+<!-- ═══════════════════ HERO ═══════════════════ -->
+<div class="hero">
+  <div class="hero-content">
+    <div class="hero-label">Research Summary</div>
+    <h1>Relational Cell Morphing with PCSAT</h1>
+    <p class="hero-sub">Automatic verification of algorithm properties &mdash; robustness, sensitivity, monotonicity, and beyond &mdash; via constrained Horn clause solving with relational cell morphing abstraction.</p>
   </div>
-</header>
+</div>
 
-<main>
+<!-- ═══════════════════ STATS ═══════════════════ -->
+<div class="stats">
+  <div class="stat"><span class="stat-num">14</span><span class="stat-label">Encodings</span></div>
+  <div class="stat"><span class="stat-num">11</span><span class="stat-label">Verified</span></div>
+  <div class="stat"><span class="stat-num">6</span><span class="stat-label">Properties</span></div>
+  <div class="stat"><span class="stat-num">6</span><span class="stat-label">Algorithms</span></div>
+</div>
 
-  <div class="method-overview">
-    <h2>How It Works</h2>
-    <p>Relational Cell Morphing reduces whole-array reasoning to tracking a single symbolic "distinguished cell." Instead of modeling every element, we follow one index <em>k</em> through two parallel runs of the algorithm, capturing how input perturbations propagate to outputs.</p>
-    <div class="method-steps">
-      <div class="method-step">
-        <div class="step-num">1</div>
-        <div class="step-label">Pick a Cell</div>
-        <div class="step-desc">Track one symbolic index <em>k</em> across two runs</div>
-      </div>
-      <div class="method-step">
-        <div class="step-num">2</div>
-        <div class="step-label">HIT / MISS</div>
-        <div class="step-desc">When the algorithm accesses index <em>j</em>: HIT if <em>j=k</em>, MISS otherwise</div>
-      </div>
-      <div class="method-step">
-        <div class="step-num">3</div>
-        <div class="step-label">Encode in PCSAT</div>
-        <div class="step-desc">Express invariants and transitions as constrained Horn clauses</div>
-      </div>
-      <div class="method-step">
-        <div class="step-num">4</div>
-        <div class="step-label">Verify</div>
-        <div class="step-desc">UNSAT = property holds for all inputs and all array sizes</div>
-      </div>
+<div class="container">
+
+<!-- ═══════════════════ THE TECHNIQUE ═══════════════════ -->
+<section>
+  <h2 class="section-title">The Technique</h2>
+
+  <p>Relational cell morphing is an abstraction technique for verifying quantitative properties of algorithms over arrays and graphs. Instead of tracking every element, we symbolically track a small number of <strong>distinguished cells</strong> and prove that a relational property holds between two runs on related inputs.</p>
+
+  <div class="diagram">
+    <div class="diagram-box">
+      <h4>Input Relation</h4>
+      <div class="formula">&forall;i. R(A&#8321;[i], A&#8322;[i])</div>
+      <div class="desc">Perturbation, ordering, or replacement at one position</div>
+    </div>
+    <div class="diagram-arrow">&rarr;</div>
+    <div class="diagram-box">
+      <h4>Output Relation</h4>
+      <div class="formula">Q(f(A&#8321;), f(A&#8322;))</div>
+      <div class="desc">Bounded difference, ordering, or equality</div>
     </div>
   </div>
 
-  <div class="section-heading">Robustness Verification</div>
-  <div class="examples-grid" style="margin-bottom: 32px;">
+  <p class="dim">The encoding reduces verification to a <strong>constrained Horn clause</strong> (CHC) satisfiability problem. We encode a violation goal (negation of the property) and use PCSAT to check whether any inductive invariant admits the violation. <strong>UNSAT</strong> means no invariant permits the violation: the property is verified.</p>
 
+  <div class="insight">
+    <div class="insight-label">Core Abstraction</div>
+    <p>At each loop iteration, we classify the accessed element as <strong>HIT</strong> (the distinguished cell &mdash; value known symbolically) or <strong>MISS</strong> (any other element &mdash; value unknown, constrained only by the input relation). The universal quantification over the distinguished cell index <code>k</code> ensures the proof covers all elements.</p>
+  </div>
+</section>
+
+<!-- ═══════════════════ PROPERTY FAMILIES ═══════════════════ -->
+<section>
+  <h2 class="section-title">Property Families</h2>
+
+  <div class="prop-grid">
+    <div class="prop-card">
+      <h4>Robustness</h4>
+      <span class="formula">|A&#8321;[i]&minus;A&#8322;[i]| &le; &epsilon; &rarr; |f(A&#8321;)&minus;f(A&#8322;)| &le; K&middot;&epsilon;</span>
+      <p>How much does the output change under L&infin; input perturbation? Verified for insertion sort (K=1), Kruskal MST (K=N&minus;1), Dijkstra SP (K=N&minus;1), and ArrayMax (K=1).</p>
+    </div>
+    <div class="prop-card">
+      <h4>Sensitivity</h4>
+      <span class="formula">&Vert;A&#8321;&minus;A&#8322;&Vert;&#8320; = 1 &rarr; &Vert;f(A&#8321;)&minus;f(A&#8322;)&Vert;&#8321; &le; S</span>
+      <p>How much does the output change when exactly one input element is replaced? Verified for histogram (S=2) and CDF (S=m&minus;1). Directly applicable to differential privacy.</p>
+    </div>
+    <div class="prop-card">
+      <h4>Monotonicity</h4>
+      <span class="formula">A&#8321;[i] &le; A&#8322;[i] &rarr; f(A&#8321;) &le; f(A&#8322;)</span>
+      <p>Does pointwise larger input produce larger output? Verified for ArrayMax and ArraySum. Kruskal verified in sync only. Dijkstra is vacuous (abstract HIT).</p>
+    </div>
+    <div class="prop-card">
+      <h4>Quantitative Monotonicity</h4>
+      <span class="formula">0 &le; A&#8322;[i]&minus;A&#8321;[i] &le; &epsilon; &rarr; 0 &le; f(A&#8322;)&minus;f(A&#8321;) &le; K&middot;&epsilon;</span>
+      <p>Combines monotonicity (lower bound) with one-sided robustness (upper bound). Verified for ArraySum (K=n). No sign bits needed since direction is known.</p>
+    </div>
+    <div class="prop-card">
+      <h4>Relational Cost</h4>
+      <span class="formula">|cost(A&#8321;) &minus; cost(A&#8322;)| &le; n &minus; d&#8320;</span>
+      <p>PickK + Prophecy: dynamically discover d&#8320; equal positions. Applied to CountPositive, CountInRange, ExpensiveBranch, InplaceMap, ConditionalCost, ArraySum, and stride analysis.</p>
+    </div>
+    <div class="prop-card">
+      <h4>Commutativity</h4>
+      <span class="formula">swap(A, j, k) &rarr; f(A) = f(A')</span>
+      <p>Two distinguished cells, swap precondition, equality postcondition. ArraySum encoding timed out &mdash; non-monotone invariants challenge PCSAT. Open problem.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════ PORTFOLIO ═══════════════════ -->
+<section>
+  <h2 class="section-title">Verification Portfolio</h2>
+
+  <h3>Genuine Verifications</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Algorithm</th><th>Property</th><th>Model</th><th>Vars</th><th>Time</th><th>Bound</th></tr></thead>
+      <tbody>
+        <tr><td>Insertion Sort</td><td><span class="tag tag-blue">Robustness</span></td><td>Async</td><td>10</td><td>~17 min</td><td>&epsilon;</td></tr>
+        <tr><td>Kruskal MST</td><td><span class="tag tag-blue">Robustness</span></td><td>Async</td><td>11</td><td>21s</td><td>(N&minus;1)&middot;&epsilon;</td></tr>
+        <tr><td>Dijkstra SP</td><td><span class="tag tag-blue">Robustness</span></td><td>Async</td><td>13</td><td>~6 min</td><td>(N&minus;1)&middot;&epsilon;</td></tr>
+        <tr><td>ArrayMax</td><td><span class="tag tag-blue">Robustness</span></td><td>Sync</td><td>10</td><td>&mdash;</td><td>&epsilon; (constant!)</td></tr>
+        <tr><td>Histogram</td><td><span class="tag tag-purple">Sensitivity</span></td><td>Async</td><td>9</td><td>7s</td><td>2</td></tr>
+        <tr><td>CDF</td><td><span class="tag tag-purple">Sensitivity</span></td><td>Async</td><td>11</td><td>23s</td><td>m&minus;1</td></tr>
+        <tr><td>ArrayMax</td><td><span class="tag tag-green">Monotonicity</span></td><td>Async</td><td>8</td><td>8m 35s</td><td>qualitative</td></tr>
+        <tr><td>ArraySum</td><td><span class="tag tag-green">Monotonicity</span></td><td>Async</td><td>8</td><td>47s</td><td>qualitative</td></tr>
+        <tr><td>Kruskal MST</td><td><span class="tag tag-green">Monotonicity</span></td><td>Sync</td><td>7</td><td>fast</td><td>qualitative</td></tr>
+        <tr><td>ArraySum</td><td><span class="tag tag-blue">Quant. Mono.</span></td><td>Sync</td><td>8</td><td>24s</td><td>n&middot;&epsilon;</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>Vacuous &amp; Inconclusive Results</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Algorithm</th><th>Property</th><th>Model</th><th>Time</th><th>Issue</th></tr></thead>
+      <tbody>
+        <tr><td>Kruskal MST</td><td><span class="tag tag-green">Monotonicity</span></td><td>Async</td><td>2s</td><td><span class="tag tag-red">Unforced HIT</span></td></tr>
+        <tr><td>Dijkstra SP</td><td><span class="tag tag-green">Monotonicity</span></td><td>Async</td><td>14s</td><td><span class="tag tag-red">Abstract HIT</span></td></tr>
+        <tr><td>ArraySum</td><td><span class="tag tag-yellow">Commutativity</span></td><td>Sync</td><td>&mdash;</td><td><span class="tag tag-yellow">Timeout</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ═══════════════════ ENCODING ARCHITECTURE ═══════════════════ -->
+<section>
+  <h2 class="section-title">Encoding Architecture</h2>
+
+  <p class="dim">Every encoding shares a common state structure and transition pattern, parameterized by the property being verified.</p>
+
+  <h3>State Structure</h3>
+<pre>Inv(i&#8321;, i&#8322;,   k, wk&#8321;, wk&#8322;,   c&#8321;, c&#8322;,   n, [params])
+    &#9584;&#9472;&#9472;&#9472;&#9472;&#9472;&#9588;   &#9584;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9588;   &#9584;&#9472;&#9472;&#9472;&#9472;&#9588;   &#9584;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9588;
+    counters   input cell     output   problem size
+               (never change) cell     + property params</pre>
+
+  <h3>Transition Pattern</h3>
+<pre>Inv(i&#8321;', ..., c&#8321;', ...) :-
+    Inv(i&#8321;, ..., c&#8321;, ...),        (* current state *)
+    Sch(i&#8321;, ..., c&#8321;, ...),        (* scheduler *)
+    (
+        HIT case                    (* i = k: value known *)
+    ) or (
+        MISS case                   (* i &ne; k: value unknown *)
+    ) or (
+        Finished / stutter          (* i &ge; n: no change *)
+    ),
+    TRANSITION BOUND.               (* property-specific constraint *)</pre>
+
+  <h3>Transition Bound by Property</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Property</th><th>Transition Bound</th><th>Role</th></tr></thead>
+      <tbody>
+        <tr><td>Robustness</td><td><code>|c&#8321;'&minus;c&#8322;'| &le; i'&middot;&epsilon;</code> (sign bit encoded)</td><td>Encodes &forall;i. |A&#8321;[i]&minus;A&#8322;[i]| &le; &epsilon;</td></tr>
+        <tr><td>Sensitivity</td><td>(none &mdash; MISS is exact via replace metric)</td><td>MISS contributes zero; HIT updates L1 explicitly</td></tr>
+        <tr><td>Monotonicity (sync)</td><td><code>m&#8321;' &le; m&#8322;'</code></td><td>Encodes &forall;i. A&#8321;[i] &le; A&#8322;[i]</td></tr>
+        <tr><td>Monotonicity (async)</td><td>(none &mdash; solver discovers invariant)</td><td>Only <code>m&#8321;' &ge; m&#8321;</code> in MISS</td></tr>
+        <tr><td>Quant. Monotonicity</td><td><code>0 &le; s&#8322;'&minus;s&#8321;' &le; i'&middot;&epsilon;</code> (no sign bits)</td><td>One-sided &epsilon; bound + direction</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ═══════════════════ VACUITY ═══════════════════ -->
+<section>
+  <h2 class="section-title">Vacuity: When UNSAT Lies</h2>
+
+  <p class="dim">An UNSAT result does not always mean the property is verified. The encoding may be <strong>vacuous</strong> &mdash; the solver proves something trivial rather than the intended property.</p>
+
+  <h3>Type 1 &mdash; Abstract HIT</h3>
+  <p>When HIT is indistinguishable from MISS (e.g., Dijkstra monotonicity), the solver keeps outputs at zero. <code>c&#8321; &gt; c&#8322;</code> is UNSAT because <code>0 &gt; 0</code> is false, not because monotonicity holds.</p>
+  <p><strong>Detection:</strong> <code>output &gt; 0</code> at termination &rarr; UNSAT reveals outputs are stuck.</p>
+
+  <h3>Type 2 &mdash; Unforced HIT</h3>
+  <p>When HIT has no position guard (<code>i = k</code>), MISS subsumes it. The solver uses MISS everywhere, and the precondition is never consulted. This happened with Kruskal async monotonicity.</p>
+  <p><strong>Detection:</strong> Remove the precondition from init and re-run &mdash; if still UNSAT, the precondition is dead.</p>
+
+  <div class="insight">
+    <div class="insight-label">Sanity Check Recipe</div>
+    <p><strong>Step 1:</strong> Violation UNSAT? Proceed. <strong>Step 2:</strong> <code>output &ge; 0</code> SAT? If UNSAT &rarr; Type 1 vacuity. <strong>Step 3:</strong> Remove precondition, re-run. If still UNSAT &rarr; Type 2 vacuity. <strong>Step 4:</strong> If SAT &rarr; precondition is alive. <em>Genuinely verified.</em></p>
+  </div>
+
+  <h3>Three Requirements for Genuine Async Monotonicity</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Requirement</th><th>ArraySum</th><th>ArrayMax</th><th>Kruskal</th><th>Dijkstra</th></tr></thead>
+      <tbody>
+        <tr><td>1. Explicit HIT</td><td>&#10003;</td><td>&#10003;</td><td>&#10003;</td><td>&#10007;</td></tr>
+        <tr><td>2. Position guard (<code>i = k</code>)</td><td>&#10003;</td><td>&#10003;</td><td>&#10007;</td><td>&#10007;</td></tr>
+        <tr><td>3. Non-decreasing MISS</td><td>&#10003;</td><td>&#10003;</td><td>&#10003;</td><td>~</td></tr>
+        <tr><td><strong>Genuine?</strong></td><td><span class="tag tag-green">Yes</span></td><td><span class="tag tag-green">Yes</span></td><td><span class="tag tag-red">Vacuous</span></td><td><span class="tag tag-red">Vacuous</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ═══════════════════ PERFORMANCE ═══════════════════ -->
+<section>
+  <h2 class="section-title">Solver Performance</h2>
+
+  <h3>Variable Count vs. Time</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Variables</th><th>Typical Time</th><th>Examples</th></tr></thead>
+      <tbody>
+        <tr><td>7&ndash;9</td><td>Seconds</td><td>Histogram, CDF, Monotone (sync)</td></tr>
+        <tr><td>10&ndash;11</td><td>Seconds to minutes</td><td>Kruskal robustness, ArraySum monotone</td></tr>
+        <tr><td>13</td><td>Minutes</td><td>Dijkstra robustness</td></tr>
+        <tr><td>15+</td><td>May not terminate</td><td>Dijkstra Approach A (abandoned)</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>HIT Complexity Matters</h3>
+  <p class="dim">ArraySum monotonicity (linear HIT: <code>s' = s + wk</code>) verified in 47 seconds. ArrayMax monotonicity (branching HIT: <code>max(m, wk)</code>) took 8 minutes 35 seconds &mdash; a 10&times; slowdown from the extra disjuncts.</p>
+
+  <div class="insight">
+    <div class="insight-label">Warning Sign</div>
+    <p>"Suspiciously fast" results deserve investigation. When an 8-variable async encoding solves in 2 seconds but structurally similar encodings take 47 seconds, the solver likely found a trivial invariant &mdash; not a meaningful proof.</p>
+  </div>
+</section>
+
+<!-- ═══════════════════ LESSONS ═══════════════════ -->
+<section>
+  <h2 class="section-title">Lessons Learned</h2>
+
+  <div class="lesson-grid">
+    <div class="lesson">
+      <span class="lesson-num">01</span>
+      <strong>Start with the simplest encoding</strong>
+      <p>Extra clauses can hurt solver performance even when mathematically sound. Dijkstra Approach A took 15+ hours vs 6 minutes for the baseline.</p>
+    </div>
+    <div class="lesson">
+      <span class="lesson-num">02</span>
+      <strong>The transition bound encodes the universal precondition</strong>
+      <p>The epsilon bound, monotone bound, and replace metric all play the same structural role: encoding &ldquo;for ALL elements, the input relation holds&rdquo; as a constraint on each transition step.</p>
+    </div>
+    <div class="lesson">
+      <span class="lesson-num">03</span>
+      <strong>Position guard is essential for async monotonicity</strong>
+      <p>The counter must track scan position (which element is being considered), not a derived quantity. Only <code>i = k</code> forces HIT at exactly one step.</p>
+    </div>
+    <div class="lesson">
+      <span class="lesson-num">04</span>
+      <strong>Non-negative assumption is critical</strong>
+      <p>Without non-negativity, monotonicity MISS is fully unconstrained and encodings become vacuous. The <code>s' &ge; s</code> constraint is the minimum useful information.</p>
+    </div>
+    <div class="lesson">
+      <span class="lesson-num">05</span>
+      <strong>Always verify non-vacuity</strong>
+      <p>UNSAT alone is insufficient. Two vacuity types require different detection: output-stuck (Type 1) and precondition-dead (Type 2). The sanity check recipe catches both.</p>
+    </div>
+    <div class="lesson">
+      <span class="lesson-num">06</span>
+      <strong>Negative results sharpen boundaries</strong>
+      <p>The Kruskal async and Dijkstra monotonicity failures taught more than the successes &mdash; they revealed the structural requirements for genuine verification.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════ EXAMPLE CARDS ═══════════════════ -->
+<section>
+  <h2 class="section-title">All Examples</h2>
+
+  <div class="section-heading">Robustness</div>
+  <div class="examples-grid" style="margin-bottom: 32px;">
     <a class="card" href="isort/">
       <div class="card-category robustness">Robustness</div>
       <div class="card-title">Insertion Sort</div>
-      <div class="card-desc">
-        1-robust under L-infinity: perturbing any single input element by at most &epsilon; changes any output element by at most &epsilon;. Verified via the HIT/MISS abstraction with explicit sign-bit tracking.
-      </div>
-      <div class="card-tags">
-        <span class="tag">1-robust</span>
-        <span class="tag">L&infin; norm</span>
-        <span class="tag">HIT / MISS</span>
-      </div>
+      <div class="card-desc">1-robust: perturbing any input by &epsilon; changes any output by at most &epsilon;. HIT/MISS abstraction with sign-bit tracking.</div>
+      <div class="card-tags"><span class="card-tag">K=1</span><span class="card-tag">Async</span><span class="card-tag">~17 min</span></div>
     </a>
-
     <a class="card" href="kruskal/">
       <div class="card-category robustness">Robustness</div>
       <div class="card-title">Kruskal's Algorithm</div>
-      <div class="card-desc">
-        (N&minus;1)-robust: perturbing every edge weight by at most &epsilon; changes the MST cost by at most (N&minus;1)&middot;&epsilon;. Models HIT-HIT, HIT-MISS, MISS-HIT, MISS-MISS edge selection matrix.
-      </div>
-      <div class="card-tags">
-        <span class="tag">(N&minus;1)-robust</span>
-        <span class="tag">L&infin; norm</span>
-        <span class="tag">HIT / MISS matrix</span>
-      </div>
+      <div class="card-desc">(N&minus;1)-robust: perturbing every edge weight by &epsilon; changes MST cost by at most (N&minus;1)&middot;&epsilon;.</div>
+      <div class="card-tags"><span class="card-tag">K=N&minus;1</span><span class="card-tag">Async</span><span class="card-tag">21s</span></div>
     </a>
-
     <a class="card" href="dijk/">
       <div class="card-category robustness">Robustness</div>
       <div class="card-title">Dijkstra's Algorithm</div>
-      <div class="card-desc">
-        (N&minus;1)-robust: perturbing every edge weight by at most &epsilon; changes shortest-path distances by at most (N&minus;1)&middot;&epsilon;. Uses hop-count abstraction with merged HIT/MISS.
-      </div>
-      <div class="card-tags">
-        <span class="tag">(N&minus;1)-robust</span>
-        <span class="tag">L&infin; norm</span>
-        <span class="tag">Hop count</span>
-      </div>
+      <div class="card-desc">(N&minus;1)-robust: perturbing every edge weight by &epsilon; changes shortest-path distances by at most (N&minus;1)&middot;&epsilon;. Hop-count abstraction.</div>
+      <div class="card-tags"><span class="card-tag">K=N&minus;1</span><span class="card-tag">Async</span><span class="card-tag">~6 min</span></div>
     </a>
-
+    <a class="card" href="arraymax-robust/">
+      <div class="card-category robustness">Robustness</div>
+      <div class="card-title">ArrayMax</div>
+      <div class="card-desc">&epsilon;-robust with constant bound (K=1): max does NOT amplify perturbation. Contractive operation, branching HIT with 4 sub-cases.</div>
+      <div class="card-tags"><span class="card-tag">K=1</span><span class="card-tag">Sync</span><span class="card-tag">Constant bound</span></div>
+    </a>
   </div>
 
-  <div class="section-heading">Sensitivity Verification</div>
-  <div class="examples-grid">
-
+  <div class="section-heading">Sensitivity</div>
+  <div class="examples-grid" style="margin-bottom: 32px;">
     <a class="card" href="histogram/">
       <div class="card-category sensitivity">Sensitivity</div>
       <div class="card-title">Histogram</div>
-      <div class="card-desc">
-        L1 sensitivity 2 under the replace metric: changing one input value shifts counts in at most two bins (one down, one up). Tracks two distinguished cells with hit1/hit2 booleans.
-      </div>
-      <div class="card-tags">
-        <span class="tag">L1 sensitivity 2</span>
-        <span class="tag">Replace metric</span>
-        <span class="tag">hit1 / hit2</span>
-      </div>
+      <div class="card-desc">L1 sensitivity 2 under replace metric: changing one input shifts counts in at most two bins.</div>
+      <div class="card-tags"><span class="card-tag">S=2</span><span class="card-tag">Async</span><span class="card-tag">7s</span></div>
     </a>
-
     <a class="card" href="cdf/">
       <div class="card-category sensitivity">Sensitivity</div>
       <div class="card-title">CDF (Cumulative Distribution)</div>
-      <div class="card-desc">
-        L1 sensitivity (m&minus;1) under the replace metric: changing one input value shifts cumulative counts for all bins above the affected range. Uses sign-bit tracking on the cumulative delta.
-      </div>
-      <div class="card-tags">
-        <span class="tag">L1 sensitivity (m&minus;1)</span>
-        <span class="tag">Replace metric</span>
-        <span class="tag">Cumulative delta</span>
-      </div>
+      <div class="card-desc">L1 sensitivity (m&minus;1): changing one input shifts cumulative counts for all bins above the affected range.</div>
+      <div class="card-tags"><span class="card-tag">S=m&minus;1</span><span class="card-tag">Async</span><span class="card-tag">23s</span></div>
     </a>
-
   </div>
 
-</main>
+  <div class="section-heading">Monotonicity</div>
+  <div class="examples-grid" style="margin-bottom: 32px;">
+    <a class="card" href="arraymax/">
+      <div class="card-category monotonicity">Monotonicity</div>
+      <div class="card-title">ArrayMax</div>
+      <div class="card-desc">Pointwise &le; input &rArr; max(A1) &le; max(A2). Async model, 4 sub-cases from max &times; max branching.</div>
+      <div class="card-tags"><span class="card-tag">Qualitative</span><span class="card-tag">Async</span><span class="card-tag">8m 35s</span></div>
+    </a>
+    <a class="card" href="arraysum/">
+      <div class="card-category monotonicity">Monotonicity</div>
+      <div class="card-title">ArraySum</div>
+      <div class="card-desc">Pointwise &le; input &rArr; sum(A1) &le; sum(A2). Linear accumulation with position guard.</div>
+      <div class="card-tags"><span class="card-tag">Qualitative</span><span class="card-tag">Async</span><span class="card-tag">47s</span></div>
+    </a>
+    <a class="card" href="kruskal-mono/">
+      <div class="card-category monotonicity">Monotonicity</div>
+      <div class="card-title">Kruskal's Algorithm</div>
+      <div class="card-desc">Sync model is genuine; async model is vacuous (unforced HIT). Vacuity analysis included.</div>
+      <div class="card-tags"><span class="card-tag">Qualitative</span><span class="card-tag">Sync</span><span class="card-tag">fast</span></div>
+    </a>
+    <a class="card" href="arraysum-qmono/">
+      <div class="card-category monotonicity">Monotonicity</div>
+      <div class="card-title">ArraySum (Quantitative)</div>
+      <div class="card-desc">Combines monotonicity + one-sided robustness: 0 &le; sum(A2)&minus;sum(A1) &le; n&middot;&epsilon;. Zero booleans.</div>
+      <div class="card-tags"><span class="card-tag">n&middot;&epsilon;</span><span class="card-tag">Sync</span><span class="card-tag">24s</span></div>
+    </a>
+    <a class="card" href="dijk-mono/">
+      <div class="card-category vacuous">Monotonicity (Vacuous)</div>
+      <div class="card-title">Dijkstra's Algorithm</div>
+      <div class="card-desc">Abstract HIT vacuity: d[u] untracked makes HIT &equiv; MISS. Solver keeps outputs at 0. Fundamental limitation.</div>
+      <div class="card-tags"><span class="card-tag">Vacuous</span><span class="card-tag">Abstract HIT</span><span class="card-tag">14s</span></div>
+    </a>
+  </div>
+
+  <div class="section-heading">Commutativity</div>
+  <div class="examples-grid" style="margin-bottom: 32px;">
+    <a class="card" href="commutativity/">
+      <div class="card-category commutativity">Commutativity (Open Problem)</div>
+      <div class="card-title">ArraySum</div>
+      <div class="card-desc">Swap invariance with two distinguished cells. Novel "same increment" MISS pattern. Encoding timed out &mdash; non-monotone invariant.</div>
+      <div class="card-tags"><span class="card-tag">Timeout</span><span class="card-tag">2 cells</span><span class="card-tag">Open</span></div>
+    </a>
+  </div>
+
+  <div class="section-heading">Relational Cost (PickK + Prophecy)</div>
+  <div class="examples-grid">
+    <a class="card" href="countpositive/">
+      <div class="card-category cost">Relational Cost</div>
+      <div class="card-title">CountPositive</div>
+      <div class="card-desc">Cost &le; n&minus;d0 via PickK + prophecy. Staged tutorial: fixed-k &rarr; PickK &rarr; PickK+&epsilon;.</div>
+      <div class="card-tags"><span class="card-tag">PickK</span><span class="card-tag">Prophecy d0</span><span class="card-tag">Staged</span></div>
+    </a>
+    <a class="card" href="cost-ext/">
+      <div class="card-category cost">Relational Cost</div>
+      <div class="card-title">Cost Extensions</div>
+      <div class="card-desc">PickK + prophecy applied to CountInRange, ExpensiveBranch, InplaceMap, ConditionalCost, ArraySum, and stride analysis.</div>
+      <div class="card-tags"><span class="card-tag">PickK</span><span class="card-tag">Mutable arrays</span><span class="card-tag">Stride</span></div>
+    </a>
+  </div>
+</section>
+
+</div>
 
 <footer>
   Each example includes an overview, detailed tutorial, and full PCSAT source code.
   <br>
-  Powered by <a href="https://github.com/AkihiroSuda/pcsat" target="_blank">PCSAT</a> — a predicate constraint satisfaction solver.
+  Powered by <a href="https://github.com/AkihiroSuda/pcsat" target="_blank">PCSAT</a> &mdash; a predicate constraint satisfaction solver.
 </footer>
 
 </body>

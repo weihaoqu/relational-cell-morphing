@@ -1,0 +1,1793 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Relational Cost Analysis &mdash; Extensions</title>
+<style>
+  :root {
+    --bg: #ffffff;
+    --surface: #f6f8fa;
+    --surface2: #eef1f5;
+    --border: #d1d9e0;
+    --text: #1f2328;
+    --text-dim: #656d76;
+    --accent: #0969da;
+    --accent2: #1a7f37;
+    --accent3: #8250df;
+    --code-bg: #f6f8fa;
+    --tab-hover: #eef1f5;
+    --highlight: #0969da1a;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+  }
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 24px 0 0;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .header-content {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 24px;
+  }
+  .header-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+  .header-sub {
+    color: var(--text-dim);
+    font-size: 0.875rem;
+    margin-bottom: 16px;
+  }
+  .tabs {
+    display: flex;
+    gap: 0;
+  }
+  .tab {
+    padding: 10px 20px;
+    cursor: pointer;
+    color: var(--text-dim);
+    font-size: 0.875rem;
+    font-weight: 500;
+    border-bottom: 2px solid transparent;
+    transition: color 0.15s, border-color 0.15s, background 0.15s;
+    user-select: none;
+    border-radius: 6px 6px 0 0;
+  }
+  .tab:hover {
+    color: var(--text);
+    background: var(--tab-hover);
+  }
+  .tab.active {
+    color: var(--text);
+    border-bottom-color: var(--accent);
+  }
+  .tab .tab-icon { margin-right: 6px; }
+
+  main {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 32px 24px 80px;
+  }
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  /* Markdown-rendered content */
+  .content h1 { font-size: 1.75rem; margin: 32px 0 16px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+  .content h1:first-child { margin-top: 0; }
+  .content h2 { font-size: 1.375rem; margin: 28px 0 12px; padding-bottom: 6px; border-bottom: 1px solid var(--border); color: var(--accent); }
+  .content h3 { font-size: 1.1rem; margin: 20px 0 8px; color: var(--accent3); }
+  .content h4 { font-size: 1rem; margin: 16px 0 8px; color: var(--text-dim); }
+  .content p { margin: 12px 0; }
+  .content strong { color: #1f2328; }
+  .content blockquote {
+    border-left: 3px solid var(--accent);
+    padding: 8px 16px;
+    margin: 12px 0;
+    background: var(--surface);
+    border-radius: 0 6px 6px 0;
+    color: var(--text-dim);
+  }
+  .content ul, .content ol { margin: 8px 0 8px 24px; }
+  .content li { margin: 4px 0; }
+  .content hr { border: none; border-top: 1px solid var(--border); margin: 24px 0; }
+  .content a { color: var(--accent); text-decoration: none; }
+  .content a:hover { text-decoration: underline; }
+  .content table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 0.875rem;
+  }
+  .content table th {
+    text-align: left;
+    padding: 10px 14px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    font-weight: 600;
+    color: var(--accent);
+  }
+  .content table td {
+    padding: 8px 14px;
+    border: 1px solid var(--border);
+  }
+  .content table tr:hover td {
+    background: var(--surface);
+  }
+  .content code {
+    font-family: 'SF Mono', 'Fira Code', 'Fira Mono', Menlo, Consolas, monospace;
+    background: var(--surface2);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.85em;
+    color: var(--accent3);
+  }
+  .content pre {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px 20px;
+    overflow-x: auto;
+    margin: 16px 0;
+    position: relative;
+  }
+  .content pre code {
+    background: none;
+    padding: 0;
+    border-radius: 0;
+    font-size: 0.8125rem;
+    color: var(--text);
+    line-height: 1.5;
+  }
+
+  /* Source code panel */
+  .source-container {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .source-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 16px;
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+    font-size: 0.8125rem;
+    color: var(--text-dim);
+  }
+  .source-filename {
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    color: var(--text);
+    font-weight: 500;
+  }
+  .source-lines {
+    display: flex;
+    overflow-x: auto;
+    font-family: 'SF Mono', 'Fira Code', Menlo, Consolas, monospace;
+    font-size: 0.8125rem;
+    line-height: 1.6;
+  }
+  .line-numbers {
+    padding: 16px 0;
+    text-align: right;
+    color: var(--text-dim);
+    user-select: none;
+    min-width: 48px;
+    opacity: 0.5;
+    border-right: 1px solid var(--border);
+  }
+  .line-numbers span {
+    display: block;
+    padding: 0 12px;
+  }
+  .source-code {
+    padding: 16px;
+    flex: 1;
+    white-space: pre;
+    color: var(--text);
+  }
+  .source-code .comment { color: #6a737d; font-style: italic; }
+  .source-code .keyword { color: #cf222e; }
+  .source-code .predicate { color: #0550ae; }
+  .source-code .operator { color: #8250df; }
+  .source-code .bool { color: #1a7f37; }
+  .source-code .number { color: #953800; }
+
+  /* Copy button */
+  .copy-btn {
+    background: var(--surface);
+    color: var(--text-dim);
+    border: 1px solid var(--border);
+    padding: 4px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.75rem;
+    transition: all 0.15s;
+  }
+  .copy-btn:hover { color: var(--text); background: var(--tab-hover); }
+
+  /* File selector tabs */
+  .file-tabs {
+    display: flex; gap: 0; padding: 0 16px;
+    background: var(--surface2); border-bottom: 1px solid var(--border);
+  }
+  .file-tab {
+    padding: 6px 14px; cursor: pointer; font-size: 0.75rem;
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    color: var(--text-dim); border-bottom: 2px solid transparent;
+    transition: color 0.15s, border-color 0.15s; user-select: none;
+  }
+  .file-tab:hover { color: var(--text); }
+  .file-tab.active { color: var(--accent); border-bottom-color: var(--accent); font-weight: 600; }
+
+  /* Info boxes */
+  .info-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    border-radius: 0 6px 6px 0;
+    padding: 16px 20px;
+    margin: 20px 0;
+  }
+  .info-box.success { border-left-color: var(--accent2); }
+  .info-box.purple { border-left-color: var(--accent3); }
+
+  /* Top navigation */
+  .topnav { border-bottom: 1px solid var(--border); font-size: 0.8rem; }
+  .topnav-content {
+    max-width: 1100px; margin: 0 auto; padding: 0 24px;
+    display: flex; align-items: center; gap: 2px; flex-wrap: wrap;
+  }
+  .topnav-home {
+    color: var(--accent); text-decoration: none; font-weight: 500;
+    padding: 8px 0; white-space: nowrap; margin-right: 8px;
+  }
+  .topnav-home:hover { text-decoration: underline; }
+  .nav-group { position: relative; }
+  .nav-group-btn {
+    background: none; border: none; cursor: pointer;
+    color: var(--text-dim); font-size: 0.8rem; padding: 8px 12px;
+    border-radius: 4px; font-family: inherit;
+    transition: color 0.15s, background 0.15s;
+  }
+  .nav-group-btn:hover, .nav-group:focus-within .nav-group-btn {
+    color: var(--text); background: var(--surface2);
+  }
+  .nav-group-btn.active { color: var(--text); font-weight: 600; }
+  .nav-dropdown {
+    display: none; position: absolute; top: 100%; left: 0;
+    background: var(--bg); border: 1px solid var(--border);
+    border-radius: 6px; padding: 4px 0; min-width: 160px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1); z-index: 200;
+  }
+  .nav-group:hover .nav-dropdown,
+  .nav-group:focus-within .nav-dropdown { display: block; }
+  .nav-dropdown a {
+    display: block; padding: 6px 16px; color: var(--text-dim);
+    text-decoration: none; white-space: nowrap;
+    transition: background 0.1s, color 0.1s;
+  }
+  .nav-dropdown a:hover { background: var(--surface); color: var(--text); }
+  .nav-dropdown a.active { color: var(--accent); font-weight: 600; background: var(--highlight); }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .tab { padding: 8px 12px; font-size: 0.8rem; }
+    main { padding: 20px 16px 60px; }
+    .header-title { font-size: 1.25rem; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="topnav">
+    <div class="topnav-content">
+      <a href="../" class="topnav-home">&larr; All Examples</a>
+      <div class="nav-group">
+        <button class="nav-group-btn">Robustness &#9662;</button>
+        <div class="nav-dropdown">
+          <a href="../isort/">Insertion Sort</a>
+          <a href="../kruskal/">Kruskal</a>
+          <a href="../dijk/">Dijkstra</a>
+          <a href="../arraymax-robust/">ArrayMax</a>
+        </div>
+      </div>
+      <div class="nav-group">
+        <button class="nav-group-btn">Sensitivity &#9662;</button>
+        <div class="nav-dropdown">
+          <a href="../histogram/">Histogram</a>
+          <a href="../cdf/">CDF</a>
+        </div>
+      </div>
+      <div class="nav-group">
+        <button class="nav-group-btn">Monotonicity &#9662;</button>
+        <div class="nav-dropdown">
+          <a href="../arraymax/">ArrayMax</a>
+          <a href="../arraysum/">ArraySum</a>
+          <a href="../kruskal-mono/">Kruskal</a>
+          <a href="../arraysum-qmono/">ArraySum (Quant.)</a>
+          <a href="../dijk-mono/">Dijkstra (vacuous)</a>
+        </div>
+      </div>
+      <div class="nav-group">
+        <button class="nav-group-btn">Commutativity &#9662;</button>
+        <div class="nav-dropdown">
+          <a href="../commutativity/">ArraySum</a>
+        </div>
+      </div>
+      <div class="nav-group">
+        <button class="nav-group-btn active">Cost &#9662;</button>
+        <div class="nav-dropdown">
+          <a href="../countpositive/">CountPositive</a>
+          <a href="../cost-ext/" class="active">Extensions</a>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="header-content">
+    <div class="header-title">Relational Cost Analysis &mdash; Extensions</div>
+    <div class="header-sub">PickK + Prophecy with PCSAT &mdash; Beyond CountPositive</div>
+    <div class="tabs">
+      <div class="tab active" data-panel="simple" onclick="switchTab(this)">
+        <span class="tab-icon">&#128196;</span>Overview
+      </div>
+      <div class="tab" data-panel="detailed" onclick="switchTab(this)">
+        <span class="tab-icon">&#128214;</span>Detailed Tutorial
+      </div>
+      <div class="tab" data-panel="source" onclick="switchTab(this)">
+        <span class="tab-icon">&#128187;</span>Source Code
+      </div>
+    </div>
+  </div>
+</header>
+
+<main>
+  <!-- ============ SIMPLE / OVERVIEW PANEL ============ -->
+  <div id="panel-simple" class="panel active content">
+    <h1>Cost Analysis Extensions with PickK + Prophecy</h1>
+    <p>Five extensions of the PickK + prophecy technique to different algorithms, demonstrating its generality beyond the CountPositive baseline.</p>
+    <hr>
+
+    <h2>What This Is</h2>
+    <p>The core PickK + prophecy framework was developed for <strong>CountPositive</strong>: counting how many array elements are positive, then bounding how much the count can differ between two related arrays. These extensions show the technique applies broadly to different <strong>branch conditions</strong>, <strong>cost magnitudes</strong>, <strong>mutable arrays</strong>, <strong>value-dependent costs</strong>, and <strong>asymmetric stride patterns</strong>.</p>
+
+    <div class="info-box purple">
+      <strong>KEY IDEA</strong><br><br>
+      <strong>PickK</strong> dynamically re-focuses the distinguished cell to discover positions where <code>A1[i] = A2[i]</code>.<br>
+      <strong>Prophecy <code>d0</code></strong> promises at least <code>d0</code> such equal positions exist.<br>
+      At termination, the cost difference is bounded by a function of <code>n - d0</code> (the unequal positions).
+    </div>
+    <hr>
+
+    <h2>The Extensions</h2>
+
+    <h3>1. CountInRange &mdash; Different Branch Condition</h3>
+<pre><code>CountInRange(A, n, lo, hi):
+    cost := 0
+    for i = 0 to n-1:
+        if lo &le; A[i] and A[i] &le; hi:
+            cost++</code></pre>
+    <p><strong>Bound:</strong> <code>cost1 - cost2 &le; n - d0</code></p>
+    <p><strong>Insight:</strong> The specific branch condition (<code>lo &le; x &le; hi</code> vs <code>x &gt; 0</code>) is irrelevant to the encoding. What matters is: <em>equal values take the same branch</em> (cost neutral), <em>unequal values may diverge</em> (worst case &plusmn;1). The PickK + prophecy structure is identical to CountPositive.</p>
+
+    <h3>2. ExpensiveBranch (Nested) &mdash; Non-Unit Cost</h3>
+<pre><code>ExpensiveBranch(A, n):
+    cost := 0
+    for i = 0 to n-1:
+        if A[i] &gt; 0:
+            cost += 2          (* e.g., two array writes *)</code></pre>
+    <p><strong>Bound:</strong> <code>|cost1 - cost2| &le; 2(n - d0)</code></p>
+    <p><strong>Insight:</strong> When the branch costs &plusmn;2 instead of &plusmn;1, each disagreeing position changes the cost difference by up to 2. The coefficient appears naturally in the bound. Equal positions (discovered by PickK) still contribute zero cost difference.</p>
+
+    <h3>3. InplaceMap &mdash; Mutable Array</h3>
+<pre><code>InplaceMap(A, n):
+    for i = 0 to n-1:
+        x = A[i]
+        A[i] = f(x)           (* f(x) = x &gt; 0 ? x+1 : 1 *)</code></pre>
+    <p><strong>Bound:</strong> <code>cost1 - cost2 &le; n - d0</code></p>
+    <p><strong>Insight:</strong> Unlike read-only scans, InplaceMap <strong>writes back to the array</strong>. Cell morphing must track values that <em>change</em> during execution. The key property: <code>f</code> preserves equality (<code>ak1 = ak2</code> implies <code>f(ak1) = f(ak2)</code>), so equal positions remain equal after mutation. This shows PickK + prophecy works with mutable arrays, not just scans.</p>
+
+    <h3>4. ConditionalCost &mdash; Value-Dependent Cost with Epsilon</h3>
+<pre><code>ConditionalCost(A, n):
+    cost := 0
+    for i = 0 to n-1:
+        if A[i] &gt; 0:
+            cost += A[i]</code></pre>
+    <p><strong>Bound:</strong> <code>cost1 - cost2 &le; (n - d0) &middot; &epsilon;</code></p>
+    <p><strong>Insight:</strong> This is the <em>key</em> example that requires <strong>all three ingredients</strong>: PickK, prophecy, <em>and</em> an &epsilon; bound. The cost is value-dependent (<code>cost += A[i]</code>, not <code>cost++</code>), so pure counting cannot bound it. At unequal positions, the Lipschitz property <code>|max(a1,0) - max(a2,0)| &le; |a1 - a2| &le; &epsilon;</code> gives a per-step bound of &epsilon;. At equal positions (d0 of them), the contribution is exactly zero.</p>
+
+    <h3>5. Stride Analysis &mdash; Two Different Programs</h3>
+<pre><code>P1(A1, n):                    P2(A2, n):
+  for i1 = 0 to n-1:            for i2 = 0 to n-1 step 2:
+    if A1[i1] &gt; 0: cost1++        if A2[i2] &gt; 0: cost2++</code></pre>
+    <p><strong>Bound:</strong> <code>cost1 - cost2 &le; n - d0</code></p>
+    <p><strong>Insight:</strong> P1 visits every position (stride 1), P2 visits even positions only (stride 2). An <em>epoch model</em> absorbs the stride difference: each epoch j covers positions 2j and 2j+1, where P1 processes both and P2 processes only 2j. This gives a synchronized encoding with no scheduler. At HIT-equal epochs, the even position cancels and only the odd position can add &plusmn;1.</p>
+    <hr>
+
+    <h2>Summary of Results</h2>
+    <table>
+      <thead>
+        <tr><th>Example</th><th>Bound</th><th>Result</th><th>Time</th><th>What It Shows</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>CountInRange</td><td><code>n - d0</code></td><td><strong>UNSAT</strong></td><td>~5s</td><td>Branch condition is irrelevant</td></tr>
+        <tr><td>ExpensiveBranch</td><td><code>2(n - d0)</code></td><td><strong>UNSAT</strong></td><td>&mdash;</td><td>Non-unit cost coefficients</td></tr>
+        <tr><td>InplaceMap</td><td><code>n - d0</code></td><td><strong>UNSAT</strong></td><td>~31s</td><td>Mutable arrays with PickK</td></tr>
+        <tr><td>ConditionalCost</td><td><code>(n-d0)&middot;&epsilon;</code></td><td><strong>UNSAT</strong></td><td>~11s</td><td>Value-dependent cost (all 3 ingredients)</td></tr>
+        <tr><td>Stride (epoch)</td><td><code>n - d0</code></td><td><strong>UNSAT</strong></td><td>~3s</td><td>Asymmetric programs, epoch sync</td></tr>
+      </tbody>
+    </table>
+
+    <div class="info-box success">
+      <strong>ALL FIVE EXTENSIONS VERIFIED</strong><br><br>
+      Every example returns <strong>UNSAT</strong> for its violation query, confirming the cost bound cannot be exceeded. The PickK + prophecy technique generalizes across branch conditions, cost magnitudes, mutable state, value-dependent costs, and asymmetric stride patterns.
+    </div>
+    <hr>
+
+    <h2>The Three-Layer Architecture</h2>
+<pre><code>Layer 1: Standard Cell Morphing (foundation)
+  Track one distinguished cell (k, ak1, ak2, bk)
+  HIT/MISS abstraction: i = k &rarr; values known; i &ne; k &rarr; unknown
+
+Layer 2: PickK (existential morphing)            &larr; NEW
+  Functional predicate PickK(state..., kp) re-chooses which cell to track
+  Two phases: searching (move spotlight) and settled (keep current cell)
+
+Layer 3: Prophecy Counting (d, d0)               &larr; NEW
+  d0: "at least d0 positions have A1[i] = A2[i]"
+  d: counter of discovered equal positions so far
+  When d &ge; d0: prophecy fulfilled, stop searching</code></pre>
+
+    <h3>How They Work Together</h3>
+<pre><code>PickK says: "focus on index i right now"
+              &darr;
+Cell morphing says: "at this index, bk=1 means values are equal"
+              &darr;
+Prophecy says: "that's another good position! d' = d + 1"
+              &darr;
+Cost tracking says: "equal values &rarr; same branch &rarr; cost unchanged"
+              &darr;
+At termination: "found d &ge; d0 good positions, so cost diff &le; f(n - d0)"</code></pre>
+    <hr>
+
+    <h2>Key Takeaways</h2>
+    <ol>
+      <li><strong>PickK is essentially free</strong>: Adding the functional predicate introduces no meaningful overhead to invariant synthesis. In some cases it is even <em>faster</em> than fixed-k encodings.</li>
+      <li><strong>Synchronized &gt; Asynchronous for deterministic loops</strong>: For loops with fixed iteration order, sync encodings are ~4000x faster (seconds vs hours). Async is only needed when runs have data-dependent control flow.</li>
+      <li><strong>Clause count dominates variable count</strong>: Going from 5 to 9 variables barely matters. Going from 5 to 12 Horn clauses is catastrophic. Minimize clauses, not variables.</li>
+      <li><strong>The framework is modular</strong>: Each extension reuses the same Init/Transition/Wit/PickK/Goal structure. Only the per-step cost model changes.</li>
+    </ol>
+  </div>
+
+  <!-- ============ DETAILED TUTORIAL PANEL ============ -->
+  <div id="panel-detailed" class="panel content">
+    <h1>Relational Cost Analysis via PickK + Prophecy in PCSAT</h1>
+    <h3>A plain-language guide to what we built, why it works, and what we learned.</h3>
+    <hr>
+
+    <h2>1. The Big Picture</h2>
+    <p>You have a research framework called <strong>relational cell morphing</strong> that verifies properties about programs running on two related arrays. Previous work proved robustness ("small input change &rarr; small output change") and sensitivity ("one element differs &rarr; bounded output change").</p>
+    <p>Now we're extending this to <strong>relational cost</strong> &mdash; proving that the <em>cost</em> (number of operations, accumulated values, etc.) of running a program on two related arrays differs by at most some bound.</p>
+    <p>The key challenge: cost depends on <strong>many</strong> array elements, not just one. Standard cell morphing tracks a single distinguished cell <code>k</code>. That's enough for robustness (where an epsilon bound absorbs the unknown cells) but not for cost (where each cell's contribution matters).</p>
+    <p><strong>The solution: PickK + prophecy.</strong> Instead of one fixed cell, we dynamically re-focus the spotlight using a functional predicate <code>PickK</code>, and count how many "good" positions we discover using a prophecy variable <code>d0</code>.</p>
+    <hr>
+
+    <h2>2. Technical Architecture</h2>
+
+    <h3>The Three Layers</h3>
+    <p>Think of the encoding as three layers stacked on top of each other:</p>
+
+    <p><strong>Layer 1: Standard Cell Morphing</strong> (from previous work)</p>
+    <ul>
+      <li>Track one distinguished cell <code>(k, ak1, ak2, bk)</code></li>
+      <li>HIT/MISS abstraction: when <code>i = k</code>, values are known; when <code>i &ne; k</code>, values are unknown</li>
+      <li>This is the foundation &mdash; it gives us relational information at one position</li>
+    </ul>
+
+    <p><strong>Layer 2: PickK (Existential Morphing)</strong> &larr; NEW</p>
+    <ul>
+      <li>A functional predicate <code>PickK(state..., kp)</code> that re-chooses which cell to track</li>
+      <li>Two modes: <em>searching</em> (move spotlight to current index) and <em>settled</em> (keep current cell)</li>
+      <li>This lets us gather relational information at MULTIPLE positions across execution</li>
+    </ul>
+
+    <p><strong>Layer 3: Prophecy Counting (d, d0)</strong> &larr; NEW</p>
+    <ul>
+      <li><code>d0</code>: "I promise there exist at least d0 positions where A1[i] = A2[i]"</li>
+      <li><code>d</code>: counter of how many such positions we've actually found so far</li>
+      <li>When <code>d &ge; d0</code>: prophecy fulfilled, stop searching</li>
+      <li>The final bound is parameterized by <code>d0</code></li>
+    </ul>
+
+    <h3>How They Work Together</h3>
+<pre><code>PickK says: "focus on index i right now"
+              &darr;
+Cell morphing says: "at this index, bk=1 means values are equal"
+              &darr;
+Prophecy says: "that's another good position! d' = d + 1"
+              &darr;
+Cost tracking says: "equal values &rarr; same branch &rarr; cost unchanged"
+              &darr;
+At termination: "found d &ge; d0 good positions, so cost diff &le; n - d0"</code></pre>
+
+    <h3>Synchronized vs Asynchronous Model</h3>
+    <p>This was our <strong>biggest discovery</strong> of the session:</p>
+    <table>
+      <thead>
+        <tr><th>Model</th><th>What It Means</th><th>Extra Predicates</th><th>Cost Overhead</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Synchronized</td><td>Single counter <code>i</code>, both runs step together</td><td>Wit (witness)</td><td><strong>Zero</strong></td></tr>
+        <tr><td>Asynchronous</td><td>Two counters <code>i1, i2</code>, scheduler decides who steps</td><td>SchTF, SchFT, SchTT + fairness</td><td><strong>Massive</strong> (3hr &rarr; 2.5s)</td></tr>
+      </tbody>
+    </table>
+    <p>For algorithms with deterministic iteration order (countpositive, arraysum, etc.), <strong>always use synchronized</strong>. The async scheduler adds 6+ Horn clauses that PCSAT must close invariants under, and this is the entire bottleneck.</p>
+    <p>Async is only needed when runs can make different control-flow decisions (e.g., Kruskal's algorithm where one run might add an edge that the other skips).</p>
+    <hr>
+
+    <h2>3. What Each File Does</h2>
+
+    <h3>Encodings (in recommended testing order)</h3>
+    <table>
+      <thead>
+        <tr><th>File</th><th>What</th><th>Vars</th><th>Time</th><th>Teaches</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>countpositive_counting.clp</code></td><td>Pure counting, no morphing</td><td>5</td><td>5s</td><td>The property itself is simple</td></tr>
+        <tr><td><code>countpositive_sync.clp</code></td><td>Sync + PickK</td><td>9</td><td><strong>2.5s</strong></td><td>PickK has zero overhead</td></tr>
+        <tr><td><code>countpositive_fixedk.clp</code></td><td>Fixed k, no PickK</td><td>7</td><td>4.5s</td><td>Fixed k can only prove n-1</td></tr>
+        <tr><td><code>arraysum_mixed_sync.clp</code></td><td>Sync + PickK + eps</td><td>10</td><td><strong>25s</strong></td><td>PickK needed for value-dependent bounds</td></tr>
+        <tr><td><code>countpositive.clp</code></td><td>Async + PickK (original)</td><td>11</td><td>~3hr</td><td>Async scheduler is the bottleneck</td></tr>
+      </tbody>
+    </table>
+    <hr>
+
+    <h2>4. Technology Choices and Why</h2>
+
+    <h3>Why PCSAT (not SMT arrays)?</h3>
+    <p>PCSAT solves constrained Horn clauses (CHCs) over integers. By encoding array accesses as HIT/MISS on distinguished cells, we avoid SMT array theories entirely. The trade-off: we lose precision at MISS positions, but gain the ability to use PCSAT's powerful invariant synthesis.</p>
+
+    <h3>Why functional predicates for PickK?</h3>
+    <p>PickK is a functional predicate (maps state &rarr; output) rather than a relation. This is the PCSat/pfwCSP way of expressing existential quantification: "there EXISTS a choice of kp such that the invariant is maintained." PCSAT synthesizes the interpretation of PickK along with the invariant &mdash; it figures out the optimal refocusing strategy automatically.</p>
+
+    <h3>Why prophecy (d0)?</h3>
+    <p>Without d0, you'd need to track exactly which positions are equal &mdash; impossible without array theory. Prophecy sidesteps this: "I don't know WHICH positions are equal, but there are at least d0 of them." The bound <code>n - d0</code> degrades gracefully from <code>n</code> (d0=0, no information) to <code>0</code> (d0=n, identical arrays).</p>
+
+    <h3>Why Wit (witness predicate) in sync model?</h3>
+    <p>When PickK refocuses from cell k to cell kp, we need fresh values <code>(ak1p, ak2p, bkp)</code> for the new cell. In async mode, the scheduler predicates (SchTT etc.) provide these existentially. In sync mode, we use a minimal <code>Wit</code> predicate for the same purpose. Wit has the same signature as Inv minus the mutable state &mdash; PCSAT synthesizes its interpretation.</p>
+    <hr>
+
+    <h2>5. Decision Reasoning</h2>
+
+    <h3>"Why not just add the PickK fallback rule?"</h3>
+    <p>We tried adding a third PickK rule for the case <code>d &lt; d0 &and; i1 &ne; i2</code> (keep cell k when loops are misaligned). This <strong>made things slower</strong>, not faster.</p>
+    <p>The lesson (echoing the Dijkstra Approach A failure): PCSAT must find an invariant that is closed under ALL Horn clauses simultaneously. More clauses = more constraints on the invariant = harder problem. An extra clause that's "sound but unnecessary" gives the solver more work for no benefit.</p>
+    <blockquote><strong>Rule of thumb:</strong> Only add a Horn clause if it carries information the solver needs. If a case is already handled by the solver's freedom to choose any value, don't constrain it.</blockquote>
+
+    <h3>"Why synchronized over asynchronous?"</h3>
+    <p>For deterministic-order loops (<code>for i = 0 to n-1</code>), both runs visit indices in the same order. The async model (i1, i2 with scheduler) allows interleavings that can't actually happen &mdash; and the solver must prove the property for ALL interleavings, which is strictly harder.</p>
+    <p>The sync model (single counter i) is both:</p>
+    <ul>
+      <li><strong>Sound</strong>: both runs really do step together</li>
+      <li><strong>More precise</strong>: no spurious interleavings</li>
+      <li><strong>Dramatically faster</strong>: 6 fewer Horn clauses</li>
+    </ul>
+    <p><strong>When async IS needed:</strong> Kruskal MST (add/skip decisions differ between runs), or any algorithm where data-dependent control flow causes the runs to diverge.</p>
+
+    <h3>"Why is arraysum more interesting than countpositive?"</h3>
+    <p>For countpositive, the cost contribution at each step is &plusmn;1 regardless of values. Pure counting can express "equal &rarr; 0, unequal &rarr; &plusmn;1" without knowing what the values actually are.</p>
+    <p>For arraysum, the cost contribution is <code>a1[i] - a2[i]</code> &mdash; it depends on the actual VALUES. Cell morphing at HIT positions gives <code>|ak1 - ak2| &le; eps</code>, bounding the per-step contribution. Counting has no access to values, so it can't express this. PickK + cell morphing is genuinely necessary.</p>
+    <hr>
+
+    <h2>6. Lessons Learned</h2>
+
+    <h3>Bug: Extra clauses hurt PCSAT (confirmed again!)</h3>
+    <p>We already knew this from Dijkstra Approach A (15+ hours with extra TT clause). The <code>countpositive_opt.clp</code> experiment confirms it: adding one PickK rule made things slower. This is now a <strong>replicated finding</strong> across two completely different encoding families.</p>
+
+    <h3>Insight: PickK is essentially free</h3>
+    <p>Version A (9 vars, PickK) was FASTER than Version B (5 vars, no PickK): 2.5s vs 5s. The functional predicate adds no meaningful overhead to invariant synthesis. The solver handles existential morphing naturally.</p>
+    <p>This was surprising &mdash; we expected PickK to add a quantifier alternation penalty. In practice, PCSAT's treatment of functional predicates is efficient enough that it doesn't show up.</p>
+
+    <h3>Insight: The async scheduler is the ENTIRE bottleneck for cost</h3>
+    <p>Going from async to sync: 3 hours &rarr; 2.5 seconds. That's a ~4000x speedup. The scheduler adds SchTF, SchFT, SchTT (3 unknown predicates) + 2 fairness clauses + 1 disjunction clause = 6 extra Horn constraints. For cost encodings with PickK, this is too much.</p>
+
+    <h3>Insight: Performance scales with CLAUSES, not VARIABLES</h3>
+    <table>
+      <thead>
+        <tr><th>Encoding</th><th>Variables</th><th>Clauses</th><th>Time</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Counting (B)</td><td>5</td><td>3</td><td>5s</td></tr>
+        <tr><td>Sync+PickK (A)</td><td>9</td><td>5</td><td>2.5s</td></tr>
+        <tr><td>Async+PickK (original)</td><td>11</td><td>~12</td><td>3hr</td></tr>
+      </tbody>
+    </table>
+    <p>Going from 5 to 9 variables barely matters. Going from 5 to 12 clauses is catastrophic. <strong>Clause count matters more than variable count</strong> for PCSAT performance in this domain.</p>
+
+    <h3>Pattern: The "PickK search &rarr; settle" two-phase strategy</h3>
+    <p>The PickK rules encode a proof strategy:</p>
+    <ol>
+      <li><strong>Phase 1 (d &lt; d0)</strong>: Keep refocusing to current index. Each TT step tests equality. If equal, bank it (d++). </li>
+      <li><strong>Phase 2 (d &ge; d0)</strong>: Stop refocusing. Prophecy fulfilled. Remaining steps are worst-case.</li>
+    </ol>
+    <p>This is a general pattern that could apply to any property that benefits from counting "good" positions. Future examples might use different criteria for "good" (not just equality).</p>
+
+    <h3>Anti-pattern: Don't use async for deterministic-order loops</h3>
+    <p>If both runs iterate <code>0, 1, 2, ..., n-1</code> in order, use a single counter. The async model's freedom to interleave is wasted (all interleavings reach the same final state) but costs the solver enormously.</p>
+    <hr>
+
+    <h2>7. What's Next</h2>
+
+    <h3>Immediate (for the paper)</h3>
+    <ol>
+      <li>countpositive: sync+PickK (2.5s), fixed-k comparison (4.5s), counting baseline (5s)</li>
+      <li>arraysum_mixed: sync+PickK+eps (25s) &mdash; the killer example</li>
+      <li>Try more algorithms: count_in_range, weighted_sum, conditional_accumulate</li>
+      <li>Write up the comparison table for the paper</li>
+    </ol>
+
+    <h3>Future directions</h3>
+    <ul>
+      <li><strong>Async cost</strong>: Find an algorithm where async + PickK is necessary (cost depends on data-dependent control flow). This would show the framework's generality even if solver time is longer.</li>
+      <li><strong>Tighter bounds</strong>: For arraysum, the HIT-unequal case could be split further (both positive contribution &rarr; tighter bound). Need to see if PCSAT can handle the extra cases.</li>
+      <li><strong>Multiple distinguished cells</strong>: Instead of one PickK, could we have PickK1, PickK2? Track two cells simultaneously? Would add variables but might give tighter bounds for algorithms with two interacting cost-relevant positions.</li>
+    </ul>
+    <hr>
+
+    <h2>8. Async Exploration: Stride-1 vs Stride-2</h2>
+
+    <h3>The Setup</h3>
+    <p>Two DIFFERENT programs on two RELATED arrays:</p>
+<pre><code>P1(A1, n):                    P2(A2, n):
+  for i1 = 0 to n-1:            for i2 = 0 to n-1 step 2:
+    if A1[i1] &gt; 0: cost1++        if A2[i2] &gt; 0: cost2++</code></pre>
+    <p>P1 visits every position (stride 1, n iterations). P2 visits even positions only (stride 2, n/2 iterations). The counters diverge: after one step each, i1=1 but i2=2.</p>
+    <p><strong>Property:</strong> <code>cost1 - cost2 &le; n - d0</code>, where d0 counts equal values at even positions (the intersection of both programs' index sets).</p>
+
+    <h3>Why This Genuinely Needs Async</h3>
+    <p>The scheduler must interleave P1 and P2's steps. A natural pattern emerges:</p>
+    <ul>
+      <li><strong>TT</strong> (both step): i1&rarr;i1+1, i2&rarr;i2+2. If aligned (i1=i2=2j), they see the same even position. PickK can discover equality here (d++). But now i1=2j+1, i2=2j+2 &mdash; misaligned.</li>
+      <li><strong>TF</strong> (P1 catches up): i1&rarr;i1+1. Now i1=2j+2, i2=2j+2 &mdash; realigned!</li>
+      <li>Repeat: TT, TF, TT, TF, ... gives epochs where PickK can focus on each even position.</li>
+    </ul>
+    <p>The scheduler ARRANGES the alignment. PickK exploits it. This is the interplay we want to demonstrate.</p>
+
+    <h3>Two Encodings</h3>
+    <table>
+      <thead>
+        <tr><th>File</th><th>Model</th><th>Scheduler?</th><th>Clauses</th><th>Variables</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>stride12_cost_sync.clp</code></td><td>Epoch sync</td><td>No</td><td>~5</td><td>9</td></tr>
+        <tr><td><code>stride12_cost_async.clp</code></td><td>Full async</td><td>Yes (SchTF/FT/TT)</td><td>11</td><td>10</td></tr>
+      </tbody>
+    </table>
+    <p>The sync epoch model absorbs the stride difference into per-epoch semantics (each epoch = P1 does 2 steps, P2 does 1). It's a shortcut that avoids the scheduler entirely. <strong>Already verified UNSAT.</strong></p>
+    <p>The async model is the real test: can PCSAT handle full scheduler + PickK + prophecy on a problem that genuinely has different strides? Based on async countpositive (~3hr), it might be slow. But this is a more meaningful example because the scheduler isn't just adding spurious interleavings &mdash; it's actually needed to arrange the alignment pattern.</p>
+
+    <h3>The Invariant PCSAT Needs to Find</h3>
+    <p>For the async model, the invariant is more complex. At any point:</p>
+    <ul>
+      <li>P1 has processed i1 positions, P2 has processed i2/2 positions (since i2 is always even)</li>
+      <li>cost1 &le; i1 (at most one count per P1 step)</li>
+      <li>cost2 &le; i2/2 (at most one count per P2 step)</li>
+      <li>d counts discovered equal positions at even indices where both were aligned</li>
+    </ul>
+    <p>The expected invariant shape: <code>c &le; i1 - d</code> (P1's maximum minus the savings from equal positions). At termination (i1=n, i2=n, d&ge;d0): <code>c &le; n - d0</code>.</p>
+
+    <h3>Lessons (pending verification)</h3>
+    <ul>
+      <li>If async UNSAT in reasonable time: proves the framework handles genuinely different programs with different strides. Major result for the paper.</li>
+      <li>If async times out: confirms the scheduler bottleneck scales to new examples. The epoch sync model (already verified) is the practical encoding, while the async formulation shows what the IDEAL encoding would look like.</li>
+      <li>Either way, having both encodings demonstrates the design space clearly.</li>
+    </ul>
+
+    <hr>
+    <h2>CountInRange Deep Dive</h2>
+    <p>Demonstrates that the PickK+prophecy encoding is <strong>abstraction-agnostic</strong>: same 9 variables, same 5 clauses, same n&minus;d0 bound regardless of whether you're checking <code>x &gt; 0</code> or <code>lo &le; x &le; hi</code>.</p>
+    <p>The branch condition literally doesn't matter to the encoding structure. CountInRange uses the predicate <code>lo &le; A[i] &le; hi</code> instead of <code>A[i] &gt; 0</code>, but the cost abstraction is identical: HIT-equal &rarr; same branch &rarr; c unchanged; HIT-unequal/MISS &rarr; branches may differ &rarr; c &#177; 1.</p>
+    <div class="info-box">
+      <strong>Result:</strong> UNSAT &mdash; bound n&minus;d0. Same structure as CountPositive. The branch condition is irrelevant to the proof.
+    </div>
+
+    <hr>
+    <h2>ExpensiveBranch Analysis</h2>
+    <p>Shows how <strong>non-unit cost per step</strong> scales the bound linearly: &#177;2 per step &rarr; 2&middot;(n&minus;d0) bound.</p>
+    <p>Instead of counting +1 or 0, each step costs up to K units. The encoding uses range constraints <code>c' &le; c+K</code> and <code>c' &ge; c-K</code> instead of fixed assignments. The bound becomes K&middot;(n&minus;d0).</p>
+    <div class="info-box">
+      <strong>Result:</strong> UNSAT &mdash; bound 2(n&minus;d0) for K=2. Linear scaling of the PickK+prophecy bound.
+    </div>
+
+    <hr>
+    <h2>InplaceMap (Mutable Arrays)</h2>
+    <p>Handles <strong>mutable arrays</strong> where the algorithm overwrites array positions during execution. Critical insight: the mutation function must be deterministic (f preserves equality), and the encoding must track how f applies independently to ak1 and ak2 at HIT vs MISS positions.</p>
+    <h3>Key Requirement</h3>
+    <p>The mutation function <code>f</code> must be a <strong>function</strong> (deterministic). If <code>A1[i] = A2[i]</code>, then <code>f(A1[i]) = f(A2[i])</code>. This means equal positions stay equal after mutation &mdash; PickK&rsquo;s discovery mechanism is undisturbed.</p>
+    <h3>HIT vs MISS Cell Updates</h3>
+    <ul>
+      <li><strong>HIT</strong>: Mutates the cell (applies f to ak1, ak2 independently)</li>
+      <li><strong>MISS</strong>: Cell unchanged (mutation is at position i &ne; k)</li>
+    </ul>
+    <div class="info-box">
+      <strong>Result:</strong> UNSAT (30.6s) &mdash; bound n&minus;d0. Slowest sync example due to f's two branches, but still manageable.
+    </div>
+
+    <hr>
+    <h2>ConditionalCost (&epsilon;-dependent)</h2>
+    <p>The <strong>turning point</strong>: where PickK becomes genuinely necessary because cost depends on actual VALUES not just equality.</p>
+    <h3>Why PickK Is Essential Here</h3>
+    <p>CountPositive can be proved by counting alone (per-step contribution is constant &#177;1). ConditionalCost cannot &mdash; the per-step contribution is <code>A[i]</code>, which is unbounded without the &epsilon; assumption.</p>
+    <h3>The Three Ingredients</h3>
+    <table>
+      <tr><th>Ingredient</th><th>What it provides</th><th>Without it</th></tr>
+      <tr><td><strong>PickK</strong></td><td>Discovers equal positions dynamically</td><td>Bound is (n&minus;1)&middot;&epsilon;</td></tr>
+      <tr><td><strong>Prophecy (d0)</strong></td><td>Parameterizes by input similarity</td><td>Must commit to specific count</td></tr>
+      <tr><td><strong>Epsilon (&epsilon;)</strong></td><td>Bounds per-step cost at unequal positions</td><td>Cost difference unbounded</td></tr>
+    </table>
+    <h3>The Lipschitz Bridge</h3>
+    <p><code>max(x, 0)</code> is 1-Lipschitz: <code>|max(a1,0) &minus; max(a2,0)| &le; |a1 &minus; a2| &le; &epsilon;</code>. This converts input closeness into cost closeness.</p>
+    <div class="info-box">
+      <strong>Result:</strong> UNSAT (11.5s) &mdash; bilinear bound (n&minus;d0)&middot;&epsilon;. First example requiring all three ingredients.
+    </div>
+
+    <hr>
+    <h2>ArraySum Mixed Metric</h2>
+    <p>The <strong>canonical value-dependent example</strong>. No branches, no conditionals &mdash; the cost difference comes purely from value differences. Combines replace metric (d0 equal positions) with L&infin; metric (&epsilon;-closeness) to prove (n&minus;d0)&middot;&epsilon;.</p>
+    <h3>Precision Hierarchy</h3>
+<pre><code>|sum1 &minus; sum2| &le;
+  n &middot; max_val        (no info)
+  n &middot; &epsilon;               (pure L&infin;, standard robustness)
+  (n &minus; 1) &middot; &epsilon;         (fixed-k + &epsilon;)
+  (n &minus; d0) &middot; &epsilon;        (PickK + prophecy + &epsilon;) &larr; this encoding
+  0                     (identical arrays, d0 = n)</code></pre>
+    <p>This directly improves prior robustness work from n&middot;&epsilon; to (n&minus;d0)&middot;&epsilon;.</p>
+    <div class="info-box">
+      <strong>Result:</strong> UNSAT (25s) &mdash; bound (n&minus;d0)&middot;&epsilon;. Tightest non-trivial bound. Encoding structurally identical to ConditionalCost.
+    </div>
+
+    <hr>
+    <h2>Stride Analysis (Epochs)</h2>
+    <p>Handles <strong>two different programs</strong> (stride-1 vs stride-2) by grouping steps into epochs instead of using async scheduling.</p>
+    <h3>The Epoch Model</h3>
+    <p>Each epoch covers 2 P1 positions and 1 P2 position. After each epoch, both programs have advanced by the same &ldquo;amount&rdquo; of array coverage. The epoch counter is synchronized &mdash; no scheduler needed.</p>
+    <h3>Key Difference: HIT-equal Is Not Cost-Neutral</h3>
+    <p>Unlike CountPositive (where discovering equality saves the full step cost), here the odd position within the epoch is invisible to P2 but visible to P1. HIT-equal cost can increase by 0 or 1.</p>
+    <p>The invariant PCSAT discovers: <code>c &le; 2j &minus; d</code> (coefficient 2 from the two P1 positions per epoch).</p>
+    <div class="info-box">
+      <strong>Result:</strong> UNSAT &mdash; 9 variables, 5 clauses. Same encoding size as CountPositive. Stride asymmetry adds no complexity.
+    </div>
+
+    <hr>
+    <h2>Stride Analysis (Async)</h2>
+    <p>The full async machinery for stride-1 vs stride-2: two counters i1/i2, three scheduler predicates (SchTF, SchFT, SchTT), fairness constraints. 10 variables, 11 clauses.</p>
+    <h3>The Scheduler's Meaningful Role</h3>
+    <p>Unlike async CountPositive (where the scheduler is pure overhead), here the scheduler <strong>genuinely arranges alignment</strong>. The TT-TF alternation pattern lets PickK test equality at even positions.</p>
+    <h3>Expected Performance</h3>
+    <p>Based on async countpositive (~3 hours), this encoding is likely slow. The epoch model (above) is the practical encoding; this documents the full async formulation.</p>
+    <div class="info-box">
+      <strong>Status:</strong> 10 variables, 11 clauses. Expected slow (~hours). Epoch model is the practical alternative.
+    </div>
+
+    <hr>
+    <h2>Async Bottleneck Analysis</h2>
+    <p>The <strong>smoking gun</strong>: CountPositive encoded both ways &mdash; sync (2.5s, 9 vars, 5 clauses) vs async (~3 hours, 11 vars, 11 clauses). <strong>4000&times; speedup just from modeling choice.</strong></p>
+    <h3>Why Clauses Matter More Than Variables</h3>
+    <table>
+      <tr><th>Encoding</th><th>Variables</th><th>Clauses</th><th>Time</th></tr>
+      <tr><td>Counting (no morphing)</td><td>5</td><td>3</td><td>5s</td></tr>
+      <tr><td>Sync + PickK</td><td>9</td><td>5</td><td>2.5s</td></tr>
+      <tr><td>Async</td><td>11</td><td>11</td><td>~3 hr</td></tr>
+    </table>
+    <p>Going from 5 to 9 variables barely matters. Going from 5 to 11 clauses is <strong>catastrophic</strong>. PCSAT must find an invariant simultaneously inductive under ALL clauses. Constraint interactions cause combinatorial explosion.</p>
+    <h3>The Decision Rule</h3>
+<pre><code>If BOTH runs iterate for i = 0 to n-1 (same fixed order):
+  &rarr; Use SYNC. Single counter. No scheduler. ~5 clauses.
+
+If runs CAN visit different indices:
+  &rarr; Use ASYNC. Two counters. Full scheduler. ~11 clauses.
+  &rarr; Consider EPOCH MODEL if stride ratio is fixed.</code></pre>
+    <div class="info-box purple">
+      <strong>Key Finding:</strong> Clause count is the dominant performance factor for PCSAT. The async scheduler is the entire bottleneck &mdash; 3hr &rarr; 2.5s by removing it. Don&rsquo;t use async for deterministic-order loops.
+    </div>
+  </div>
+
+  <!-- ============ SOURCE CODE PANEL ============ -->
+  <div id="panel-source" class="panel">
+    <div class="source-container">
+      <div class="source-header">
+        <span class="source-filename" id="current-filename">count_in_range_sync.clp</span>
+        <button class="copy-btn" onclick="copySource()">Copy to clipboard</button>
+      </div>
+      <div class="file-tabs">
+        <div class="file-tab active" onclick="switchFile('countinrange', this)">CountInRange</div>
+        <div class="file-tab" onclick="switchFile('inplacemap', this)">InplaceMap</div>
+        <div class="file-tab" onclick="switchFile('conditional', this)">ConditionalCost</div>
+        <div class="file-tab" onclick="switchFile('nested', this)">NestedBranch</div>
+        <div class="file-tab" onclick="switchFile('stride_sync', this)">Stride12 (sync)</div>
+        <div class="file-tab" onclick="switchFile('stride_async', this)">Stride12 (async)</div>
+      </div>
+      <div class="source-lines">
+        <div class="line-numbers" id="line-nums"></div>
+        <div class="source-code" id="source-code"></div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script>
+// Tab switching
+function switchTab(el) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('panel-' + el.dataset.panel).classList.add('active');
+}
+
+// Source code files
+let currentFile = 'countinrange';
+const sourceFiles = {};
+
+const fileNames = {
+  countinrange: 'count_in_range_sync.clp',
+  inplacemap: 'inplacemap_sync.clp',
+  conditional: 'conditional_cost_sync.clp',
+  nested: 'nested_branch_sync.clp',
+  stride_sync: 'stride12_cost_sync.clp',
+  stride_async: 'stride12_cost_async.clp'
+};
+
+
+sourceFiles.countinrange = `(*
+CountInRange(A: array, n: size, lo: int, hi: int)
+    cost := 0
+    for i = 0 to n-1:
+        if lo <= A[i] and A[i] <= hi:
+            cost++
+    return cost
+*)
+
+(*
+PROPERTY: Relative execution cost under replace metric.
+  If A1 and A2 share at least d0 equal positions,
+  then cost(A1) - cost(A2) <= n - d0.
+
+  cost = number of elements falling in range [lo, hi].
+
+WHY THIS EXAMPLE:
+  - Same structure as countpositive, different branch condition
+  - Shows PickK + prophecy is not specific to "> 0" condition
+  - The branch condition is abstracted away: at HIT we know if values
+    are equal (same branch), at MISS we dont (worst case +-1)
+
+ENCODING INSIGHT:
+  The branch condition (lo <= x <= hi vs x > 0) is irrelevant to the
+  encoding. What matters is: equal values => same branch => cost neutral.
+  Unequal values => branches may differ => cost +-1.
+  PickK discovers equal positions dynamically.
+
+State: i, n, k, ak1, ak2, bk, d, d0, c  (9 Inv variables)
+Expected: UNSAT in seconds
+*)
+
+
+(******************************************************************************)
+(* INITIALIZATION                                                             *)
+(******************************************************************************)
+
+Inv(i, n, k, ak1, ak2, bk, d, d0, c) :-
+  i = 0, n > 0,
+  0 <= k, k < n,
+  (ak1 = ak2 and bk = 1) or (ak1 <> ak2 and bk = 0),
+  d = 0,
+  d0 >= 0,
+  c = 0.
+
+
+(******************************************************************************)
+(* TRANSITION                                                                 *)
+(*                                                                            *)
+(* HIT equal (bkp=1): a1[i]=a2[i], same range check, cost neutral           *)
+(* HIT unequal (bkp=0): values differ, range check may differ, cost +-1     *)
+(* MISS: unknown, worst case cost +1                                         *)
+(******************************************************************************)
+
+Inv(i', n, kp, ak1', ak2', bk', d', d0, c') :-
+  Inv(i, n, k, ak1, ak2, bk, d, d0, c),
+  i < n,
+  PickK(i, n, k, ak1, ak2, bk, d, d0, c, kp),
+  Wit(i, n, kp, ak1p, ak2p, bkp, d, d0, c),
+  (
+    (* HIT equal: same value => same range check => cost neutral *)
+    (i = kp and bkp = 1
+     and c' = c
+     and d' = d + 1)
+    or
+    (* HIT unequal: range check may differ, worst case +1 *)
+    (i = kp and bkp = 0
+     and c' = c + 1
+     and d' = d)
+    or
+    (* MISS: unknown, worst case +1 *)
+    (i <> kp
+     and c' = c + 1
+     and d' = d)
+  ),
+  i' = i + 1,
+  ak1' = ak1p,
+  ak2' = ak2p,
+  (ak1' = ak2' and bk' = 1 or ak1' <> ak2' and bk' = 0).
+
+
+(******************************************************************************)
+(* WITNESS                                                                    *)
+(******************************************************************************)
+
+Wit(i, n, k, ak1, ak2, bk, d, d0, c) :-
+  Inv(i, n, k, ak1, ak2, bk, d, d0, c),
+  i < n.
+
+
+(******************************************************************************)
+(* PICKK                                                                      *)
+(******************************************************************************)
+
+PickK(i, n, k, ak1, ak2, bk, d, d0, c, i) :-
+  Inv(i, n, k, ak1, ak2, bk, d, d0, c),
+  i < n, d < d0.
+
+PickK(i, n, k, ak1, ak2, bk, d, d0, c, k) :-
+  Inv(i, n, k, ak1, ak2, bk, d, d0, c),
+  d >= d0.
+
+
+(******************************************************************************)
+(* GOAL: c > n - d0 — UNSAT = verified                                        *)
+(******************************************************************************)
+
+c > n - d0 :-
+  Inv(i, n, k, ak1, ak2, bk, d, d0, c),
+  n <= i,
+  d >= d0.
+(*
+unsat,13
+docker run -it -v  coar:latest bash -c   0.01s user 0.01s system 0% cpu 4.982 total
+*)`.trim();
+
+sourceFiles.inplacemap = `(*
+InplaceMap(A: array, n: size)
+    for i = 0 to n-1:
+        x = A[i]
+        A[i] = f(x)         (* f(x) = x > 0 ? x + 1 : 1 *)
+    return
+*)
+
+(*
+==========================================================================
+InplaceMap: Sync + PickK + Prophecy — MUTABLE ARRAY Cell Morphing
+==========================================================================
+
+PROPERTY: Relative execution cost under replace metric.
+  If A1 and A2 share at least d0 equal positions (before the map),
+  then |cost1 - cost2| <= n - d0.
+
+  where cost = number of iterations where the two runs DISAGREE
+  on which branch of f they take (one has x>0, other has x<=0).
+
+  When a1[i] = a2[i], f(a1[i]) = f(a2[i]) — same branch, cost neutral.
+  When a1[i] <> a2[i], branches may differ — cost +-1.
+
+WHY THIS EXAMPLE MATTERS:
+  Unlike countpositive (read-only), InplaceMap WRITES to the array.
+  Cell morphing tracks values that CHANGE during execution:
+    - HIT at step i: ak1' = f(ak1p), ak2' = f(ak2p)  (cell mutates!)
+    - MISS: cell values unchanged
+
+  This shows PickK + prophecy works with mutable arrays, not just scans.
+
+  f preserves equality: ak1p = ak2p => f(ak1p) = f(ak2p).
+  So the equal-discovery mechanism still works:
+    HIT equal => both runs apply same f => still equal after mutation.
+
+COMPARISON WITH ORIGINAL (relational-map-cm-beta-singlek2.clp):
+  Original: async + fixed k + no prophecy => bound n-1, requires bk=1 in goal
+  This:     sync + PickK + prophecy       => bound n-d0, no bk constraint
+
+State: i, n, k, ak1, ak2, bk, d, d0, c  (9 Inv variables)
+*)
+
+
+(******************************************************************************)
+(* INITIALIZATION                                                             *)
+(******************************************************************************)
+
+Inv(i, n, k, ak1, ak2, bk, d, d0, c) :-
+  i = 0, n > 0,
+  0 <= k, k < n,
+  (ak1 = ak2 and bk = 1) or (ak1 <> ak2 and bk = 0),
+  d = 0,
+  d0 >= 0,
+  c = 0.
+
+
+(******************************************************************************)
+(* TRANSITION                                                                 *)
+(*                                                                            *)
+(* At each step i, both runs read A[i], apply f, write back.                  *)
+(*                                                                            *)
+(* HIT equal (i=kp, bkp=1): ak1p = ak2p                                     *)
+(*   f(ak1p) = f(ak2p) — same branch of f, same result                      *)
+(*   Cell mutates: ak1' = f(ak1p), ak2' = ak1' (still equal)               *)
+(*   Cost neutral: c' = c                                                     *)
+(*   Discovery: d' = d + 1                                                    *)
+(*                                                                            *)
+(* HIT unequal (i=kp, bkp=0): ak1p <> ak2p                                  *)
+(*   f(ak1p) and f(ak2p) may take different branches                         *)
+(*   Cell mutates: ak1' = f(ak1p), ak2' = f(ak2p)                           *)
+(*   Worst case: c' = c + 1                                                   *)
+(*                                                                            *)
+(* MISS (i<>kp): unknown values, worst case c' = c + 1                       *)
+(*   Cell unchanged: ak1' = ak1p, ak2' = ak2p                               *)
+(******************************************************************************)
+
+Inv(i', n, kp, ak1', ak2', bk', d', d0, c') :-
+  Inv(i, n, k, ak1, ak2, bk, d, d0, c),
+  i < n,
+  PickK(i, n, k, ak1, ak2, bk, d, d0, c, kp),
+  Wit(i, n, kp, ak1p, ak2p, bkp, d, d0, c),
+  (
+    (* HIT equal: f preserves equality, cost neutral *)
+    (* ak1p = ak2p, so both take same branch of f *)
+    (i = kp and bkp = 1
+     and (
+       (ak1p > 0 and ak1' = ak1p + 1) or
+       (ak1p <= 0 and ak1' = 1)
+     )
+     and ak2' = ak1'
+     and c' = c
+     and d' = d + 1)
+    or
+    (* HIT unequal: apply f independently, may disagree *)
+    (i = kp and bkp = 0
+     and (
+       (ak1p > 0 and ak1' = ak1p + 1) or
+       (ak1p <= 0 and ak1' = 1)
+     )
+     and (
+       (ak2p > 0 and ak2' = ak2p + 1) or
+       (ak2p <= 0 and ak2' = 1)
+     )
+     and c' = c + 1
+     and d' = d)
+    or
+    (* MISS: untracked position, cell unchanged, worst case cost *)
+    (i <> kp
+     and ak1' = ak1p
+     and ak2' = ak2p
+     and c' = c + 1
+     and d' = d)
+  ),
+  i' = i + 1,
+  (ak1' = ak2' and bk' = 1 or ak1' <> ak2' and bk' = 0).
+
+
+(******************************************************************************)
+(* WITNESS                                                                    *)
+(******************************************************************************)
+
+Wit(i, n, k, ak1, ak2, bk, d, d0, c) :-
+  Inv(i, n, k, ak1, ak2, bk, d, d0, c),
+  i < n.
+
+
+(******************************************************************************)
+(* PICKK                                                                      *)
+(******************************************************************************)
+
+PickK(i, n, k, ak1, ak2, bk, d, d0, c, i) :-
+  Inv(i, n, k, ak1, ak2, bk, d, d0, c),
+  i < n, d < d0.
+
+PickK(i, n, k, ak1, ak2, bk, d, d0, c, k) :-
+  Inv(i, n, k, ak1, ak2, bk, d, d0, c),
+  d >= d0.
+
+
+(******************************************************************************)
+(* GOAL: c > n - d0 — UNSAT = verified                                        *)
+(*                                                                            *)
+(* No bk=1 constraint needed (unlike original fixed-k encoding).             *)
+(* PickK discovers equal positions dynamically.                               *)
+(******************************************************************************)
+
+c > n - d0 :-
+  Inv(i, n, k, ak1, ak2, bk, d, d0, c),
+  n <= i,
+  d >= d0.
+(*
+
+unsat,34
+docker run -it -v  coar:latest bash -c   0.02s user 0.02s system 0% cpu 30.636 total
+*)`.trim();
+
+sourceFiles.conditional = `(*
+ConditionalCost(A: array, n: size)
+    cost := 0
+    for i = 0 to n-1:
+        if A[i] > 0:
+            cost += A[i]
+    return cost
+*)
+
+(*
+==========================================================================
+Execution cost where cost DEPENDS ON ARRAY VALUES
+==========================================================================
+
+PROPERTY: Mixed metric (replace + Linf)
+  Precondition:
+    - At least d0 positions have a1[i] = a2[i]    (replace metric)
+    - ALL positions have |a1[i] - a2[i]| <= eps    (Linf metric)
+  Postcondition: cost1 - cost2 <= (n - d0) * eps
+
+  where cost = sum of A[i] for all i where A[i] > 0.
+  This is EXECUTION COST: the total work done by the conditional branch.
+
+WHY THIS IS THE KEY EXAMPLE:
+  1. The cost is genuinely VALUE-DEPENDENT: cost += A[i], not cost++.
+     Countpositive has +-1 per step — pure counting suffices.
+     Here, each step contributes up to |a1[i]|, which is unbounded
+     without the eps precondition.
+
+  2. PickK + prophecy alone (no eps) CANNOT bound this:
+     At unequal positions, |a1[i] - a2[i]| is unknown.
+     cost1 - cost2 could be arbitrarily large.
+     The bound n-d0 is meaningless (cost is not +-1).
+
+  3. PickK + prophecy + eps gives: (n-d0) * eps.
+     d0 equal positions contribute 0 (same value, same branch).
+     n-d0 unequal positions contribute at most eps each.
+     (Because max(x,0) is 1-Lipschitz: |max(a1,0)-max(a2,0)| <= |a1-a2| <= eps)
+
+  This is the ONLY example that requires ALL THREE ingredients.
+
+COST DIFFERENCE ANALYSIS per step:
+  Let f(x) = max(x, 0). Then cost contribution = f(A[i]).
+  c' - c = f(a1[i]) - f(a2[i]).
+
+  Case 1: a1[i]=a2[i] (equal). f(a1)=f(a2). Change = 0.
+  Case 2: both > 0. Change = a1[i]-a2[i]. |change| <= eps.
+  Case 3: both <= 0. f(a1)=f(a2)=0. Change = 0.
+  Case 4: a1[i]>0, a2[i]<=0. a1[i] <= a2[i]+eps <= eps.
+          Change = a1[i]-0 = a1[i] <= eps.
+  Case 5: a1[i]<=0, a2[i]>0. Symmetric. |change| <= eps.
+
+  All cases: |c' - c| <= eps. Equal positions: c' = c.
+
+State: i, n, k, ak1, ak2, bk, d, d0, c, eps  (10 Inv variables)
+*)
+
+
+(******************************************************************************)
+(* INITIALIZATION                                                             *)
+(******************************************************************************)
+
+Inv(i, n, k, ak1, ak2, bk, d, d0, c, eps) :-
+  i = 0, n > 0,
+  0 <= k, k < n,
+  eps >= 0,
+  (* Input cell: equal or eps-close *)
+  (ak1 = ak2 and bk = 1) or
+  (ak1 <> ak2 and bk = 0 and ak2 - ak1 <= eps and ak1 - ak2 <= eps),
+  d = 0,
+  d0 >= 0, d0 <= n,
+  c = 0.
+
+
+(******************************************************************************)
+(* TRANSITION                                                                 *)
+(*                                                                            *)
+(* cost_contribution(run_j) = max(A_j[i], 0)  (add A[i] only if positive)   *)
+(* c = cost1 - cost2                                                          *)
+(*                                                                            *)
+(* HIT equal (bkp=1): a1[i]=a2[i] => same contribution => c'=c              *)
+(* HIT unequal (bkp=0): |ak1p-ak2p|<=eps => |contribution diff|<=eps        *)
+(* MISS: universal |a1[i]-a2[i]|<=eps => |contribution diff|<=eps            *)
+(******************************************************************************)
+
+Inv(i', n, kp, ak1', ak2', bk', d', d0, c', eps) :-
+  Inv(i, n, k, ak1, ak2, bk, d, d0, c, eps),
+  i < n,
+  PickK(i, n, k, ak1, ak2, bk, d, d0, c, eps, kp),
+  Wit(i, n, kp, ak1p, ak2p, bkp, d, d0, c, eps),
+  (
+    (* HIT equal: identical values => identical cost contribution *)
+    (i = kp and bkp = 1
+     and c' = c
+     and d' = d + 1)
+    or
+    (* HIT unequal: |ak1p-ak2p| <= eps *)
+    (* |max(ak1p,0) - max(ak2p,0)| <= |ak1p-ak2p| <= eps *)
+    (i = kp and bkp = 0
+     and c' <= c + eps and c' >= c - eps
+     and d' = d)
+    or
+    (* MISS: universal precondition |a1[i]-a2[i]| <= eps *)
+    (* same Lipschitz argument gives |contribution diff| <= eps *)
+    (i <> kp
+     and c' <= c + eps and c' >= c - eps
+     and d' = d)
+  ),
+  i' = i + 1,
+  ak1' = ak1p,
+  ak2' = ak2p,
+  (ak1' = ak2' and bk' = 1) or
+  (ak1' <> ak2' and bk' = 0 and ak2' - ak1' <= eps and ak1' - ak2' <= eps).
+
+
+(******************************************************************************)
+(* WITNESS                                                                    *)
+(******************************************************************************)
+
+Wit(i, n, k, ak1, ak2, bk, d, d0, c, eps) :-
+  Inv(i, n, k, ak1, ak2, bk, d, d0, c, eps),
+  i < n.
+
+
+(******************************************************************************)
+(* PICKK                                                                      *)
+(******************************************************************************)
+
+PickK(i, n, k, ak1, ak2, bk, d, d0, c, eps, i) :-
+  Inv(i, n, k, ak1, ak2, bk, d, d0, c, eps),
+  i < n, d < d0.
+
+PickK(i, n, k, ak1, ak2, bk, d, d0, c, eps, k) :-
+  Inv(i, n, k, ak1, ak2, bk, d, d0, c, eps),
+  d >= d0.
+
+
+(******************************************************************************)
+(* GOAL: c > (n - d0) * eps — UNSAT = verified                                *)
+(******************************************************************************)
+
+c > (n - d0) * eps :-
+  Inv(i, n, k, ak1, ak2, bk, d, d0, c, eps),
+  n <= i,
+  d >= d0.
+(*
+unsat,15
+docker run -it -v  coar:latest bash -c   0.02s user 0.02s system 0% cpu 11.489 total
+*)`.trim();
+
+sourceFiles.nested = `(*
+ExpensiveBranch(A: array, n: size)
+    cost := 0
+    for i = 0 to n-1:
+        if A[i] > 0:
+            cost += 2        (* expensive operation, e.g. two array writes *)
+    return cost
+*)
+
+(*
+==========================================================================
+Execution cost with NON-UNIT cost per branch
+==========================================================================
+
+PROPERTY: Relative execution cost under replace metric.
+  If A1 and A2 share at least d0 equal positions,
+  then |cost1 - cost2| <= 2 * (n - d0).
+
+WHY THIS EXAMPLE:
+  In countpositive, the branch costs +1. The bound is n - d0.
+  Here, the branch costs +2. The bound is 2 * (n - d0).
+
+  This shows the framework handles different cost MAGNITUDES.
+  The coefficient 2 appears in the bound because each disagreeing
+  position can change the cost difference by up to 2.
+
+COST DIFFERENCE ANALYSIS per step:
+  Run 1: cost1 += 2 if a1[i] > 0, else cost1 += 0
+  Run 2: cost2 += 2 if a2[i] > 0, else cost2 += 0
+
+  Equal (a1[i]=a2[i]): same branch => c' = c.
+  Unequal, both positive: both += 2 => c' = c.
+  Unequal, both non-positive: both += 0 => c' = c.
+  Unequal, one positive, one not: |c' - c| = 2.
+
+  Only when branches DISAGREE does cost change, and the change is +-2.
+
+State: i, n, k, ak1, ak2, bk, d, d0, c  (9 Inv variables)
+*)
+
+
+(******************************************************************************)
+(* INITIALIZATION                                                             *)
+(******************************************************************************)
+
+Inv(i, n, k, ak1, ak2, bk, d, d0, c) :-
+  i = 0, n > 0,
+  0 <= k, k < n,
+  (ak1 = ak2 and bk = 1) or (ak1 <> ak2 and bk = 0),
+  d = 0,
+  d0 >= 0,
+  c = 0.
+
+
+(******************************************************************************)
+(* TRANSITION                                                                 *)
+(*                                                                            *)
+(* HIT equal (bkp=1): same branch => c' = c, d' = d + 1                     *)
+(* HIT unequal (bkp=0): branches may disagree => |c'-c| <= 2               *)
+(* MISS: unknown => |c'-c| <= 2                                              *)
+(******************************************************************************)
+
+Inv(i', n, kp, ak1', ak2', bk', d', d0, c') :-
+  Inv(i, n, k, ak1, ak2, bk, d, d0, c),
+  i < n,
+  PickK(i, n, k, ak1, ak2, bk, d, d0, c, kp),
+  Wit(i, n, kp, ak1p, ak2p, bkp, d, d0, c),
+  (
+    (* HIT equal: same value => same branch => cost neutral *)
+    (i = kp and bkp = 1
+     and c' = c
+     and d' = d + 1)
+    or
+    (* HIT unequal: branches may disagree, cost changes by at most 2 *)
+    (i = kp and bkp = 0
+     and c' <= c + 2 and c' >= c - 2
+     and d' = d)
+    or
+    (* MISS: unknown, worst case +-2 *)
+    (i <> kp
+     and c' <= c + 2 and c' >= c - 2
+     and d' = d)
+  ),
+  i' = i + 1,
+  ak1' = ak1p,
+  ak2' = ak2p,
+  (ak1' = ak2' and bk' = 1 or ak1' <> ak2' and bk' = 0).
+
+
+(******************************************************************************)
+(* WITNESS                                                                    *)
+(******************************************************************************)
+
+Wit(i, n, k, ak1, ak2, bk, d, d0, c) :-
+  Inv(i, n, k, ak1, ak2, bk, d, d0, c),
+  i < n.
+
+
+(******************************************************************************)
+(* PICKK                                                                      *)
+(******************************************************************************)
+
+PickK(i, n, k, ak1, ak2, bk, d, d0, c, i) :-
+  Inv(i, n, k, ak1, ak2, bk, d, d0, c),
+  i < n, d < d0.
+
+PickK(i, n, k, ak1, ak2, bk, d, d0, c, k) :-
+  Inv(i, n, k, ak1, ak2, bk, d, d0, c),
+  d >= d0.
+
+
+(******************************************************************************)
+(* GOAL: c > 2 * (n - d0) — UNSAT = verified                                 *)
+(******************************************************************************)
+
+c > 2 * (n - d0) :-
+  Inv(i, n, k, ak1, ak2, bk, d, d0, c),
+  n <= i,
+  d >= d0.`.trim();
+
+sourceFiles.stride_sync = `(*
+STRIDE-1 vs STRIDE-2 COUNTING COST
+Two different programs, two related arrays.
+
+P1(A1, n):                    P2(A2, n):
+  cost1 := 0                    cost2 := 0
+  for i1 = 0 to n-1:            for i2 = 0 to n-1 step 2:
+    if A1[i1] > 0: cost1++        if A2[i2] > 0: cost2++
+
+Precondition:
+  d0 even-indexed positions have A1[2j] = A2[2j].
+  (Odd positions: A1 and A2 may differ arbitrarily.)
+
+Property: cost1 - cost2 <= n - d0  (where n = 2*m)
+
+EPOCH MODEL:
+  One epoch j covers positions 2j and 2j+1.
+  P1 processes both (2j and 2j+1), P2 processes only 2j.
+  Epoch counter j = 0 to m-1 where m = n/2.
+
+  This absorbs the stride asymmetry into the epoch semantics,
+  giving a SYNC model with no scheduler.
+
+HIT-EQUAL (bkp = 1, A1[2j] = A2[2j]):
+  Even position 2j: same branch for both -> even contribution cancels.
+  Odd position 2j+1: only P1 sees it -> c may increase by 0 or 1.
+  Net: c' in {c, c+1}, d' = d+1.
+
+HIT-UNEQUAL (bkp = 0) / MISS (j <> kp):
+  Even position: branches may differ -> +-1 for each run.
+  Odd position: P1 may or may not count -> +0 or +1.
+  Net: c' in {c-1, c, c+1, c+2}, d' = d.
+
+INVARIANT (expected): c <= 2*j - d
+  d epochs contributed at most +1 each (only odd position).
+  (j - d) epochs contributed at most +2 each.
+  c <= d*1 + (j-d)*2 = 2j - d.
+
+GOAL: c > 2*m - d0 at termination with d >= d0.
+  Since 2*m = n, this is c > n - d0.
+
+State: j, m, k, ak1, ak2, bk, d, d0, c  (9 variables)
+*)
+
+
+(******************************************************************************)
+(* INITIALIZATION                                                             *)
+(******************************************************************************)
+
+Inv(j, m, k, ak1, ak2, bk, d, d0, c) :-
+  j = 0, m > 0,
+  0 <= k, k < m,
+  (ak1 = ak2 and bk = 1) or (ak1 <> ak2 and bk = 0),
+  d = 0,
+  d0 >= 0,
+  c = 0.
+
+
+(******************************************************************************)
+(* TRANSITION -- one epoch                                                    *)
+(*                                                                            *)
+(* Epoch j:                                                                   *)
+(*   P1 processes A1[2j] and A1[2j+1]  (stride 1, two positions)            *)
+(*   P2 processes A2[2j]               (stride 2, one position)              *)
+(*                                                                            *)
+(* The epoch counter j corresponds to the EVEN position index 2j.            *)
+(* PickK tracks one even position (in terms of epochs: one epoch index).     *)
+(* k here is an epoch index (0..m-1), corresponding to even position 2k.    *)
+(******************************************************************************)
+
+Inv(j', m, kp, ak1', ak2', bk', d', d0, c') :-
+  Inv(j, m, k, ak1, ak2, bk, d, d0, c),
+  j < m,
+  PickK(j, m, k, ak1, ak2, bk, d, d0, c, kp),
+  Wit(j, m, kp, ak1p, ak2p, bkp, d, d0, c),
+  (
+    (* HIT equal: A1[2j] = A2[2j], same branch at even position *)
+    (* Odd position 2j+1: P1 may count +1, P2 doesn't see it *)
+    (* Net change: c' = c (odd not positive) or c' = c+1 (odd positive) *)
+    (j = kp and bkp = 1
+     and (c' = c or c' = c + 1)
+     and d' = d + 1)
+    or
+    (* HIT unequal: A1[2j] <> A2[2j], branches may differ *)
+    (* Even: P1 may count +1 or 0, P2 may count +1 or 0, independently *)
+    (* Odd: P1 may count +1 or 0 *)
+    (* Worst case: P1 counts at both even and odd (+2), P2 counts 0 *)
+    (* Best case: P1 counts 0 at both, P2 counts at even (-1) *)
+    (j = kp and bkp = 0
+     and (c' = c - 1 or c' = c or c' = c + 1 or c' = c + 2)
+     and d' = d)
+    or
+    (* MISS: not tracking this epoch *)
+    (* Same range as HIT-unequal since we don't know the values *)
+    (j <> kp
+     and (c' = c - 1 or c' = c or c' = c + 1 or c' = c + 2)
+     and d' = d)
+  ),
+  j' = j + 1,
+  ak1' = ak1p,
+  ak2' = ak2p,
+  (ak1' = ak2' and bk' = 1 or ak1' <> ak2' and bk' = 0).
+
+
+(******************************************************************************)
+(* WITNESS                                                                    *)
+(******************************************************************************)
+
+Wit(j, m, k, ak1, ak2, bk, d, d0, c) :-
+  Inv(j, m, k, ak1, ak2, bk, d, d0, c),
+  j < m.
+
+
+(******************************************************************************)
+(* PICKK                                                                      *)
+(******************************************************************************)
+
+PickK(j, m, k, ak1, ak2, bk, d, d0, c, j) :-
+  Inv(j, m, k, ak1, ak2, bk, d, d0, c),
+  j < m, d < d0.
+
+PickK(j, m, k, ak1, ak2, bk, d, d0, c, k) :-
+  Inv(j, m, k, ak1, ak2, bk, d, d0, c),
+  d >= d0.
+
+
+(******************************************************************************)
+(* GOAL: c > 2*m - d0 at termination -- UNSAT = verified                     *)
+(*                                                                            *)
+(* Since 2*m = n, this is c > n - d0.                                        *)
+(******************************************************************************)
+
+c > 2 * m - d0 :-
+  Inv(j, m, k, ak1, ak2, bk, d, d0, c),
+  m <= j,
+  d >= d0.
+(*
+unsat,10
+docker run -it -v  coar:latest bash -c   0.02s user 0.02s system 1% cpu 3.366 total
+*)`.trim();
+
+sourceFiles.stride_async = `(*
+STRIDE-1 vs STRIDE-2 COUNTING COST -- ASYNC MODEL
+Two different programs, two related arrays, full scheduler.
+
+P1(A1, n):                    P2(A2, n):
+  cost1 := 0                    cost2 := 0
+  for i1 = 0 to n-1:            for i2 = 0 to n-1 step 2:
+    if A1[i1] > 0: cost1++        if A2[i2] > 0: cost2++
+
+Precondition:
+  d0 positions in the intersection (even indices) have A1[i] = A2[i].
+
+Property: cost1 - cost2 <= n - d0
+
+ASYNC MODEL:
+  i1 advances by 1 (P1), i2 advances by 2 (P2).
+  Scheduler: TF (P1 only), FT (P2 only), TT (both).
+  Fairness ensures both finish.
+
+  PickK refocuses when i1 = i2 (aligned at even position).
+  The scheduler can arrange alignment: e.g. after TT (i1=1,i2=2),
+  one TF gives i1=2,i2=2 -> aligned at 2.
+
+State: i1, i2, n, k, ak1, ak2, bk, d, d0, c  (10 variables)
+Predicates: Inv(10), PickK(11), SchTF(10), SchFT(10), SchTT(10)
+Clauses: 11 (init + 3 transitions + 3 fairness + 1 disjunction + 2 PickK + 1 goal)
+*)
+
+
+(******************************************************************************)
+(* INITIALIZATION                                                             *)
+(******************************************************************************)
+
+Inv(i1, i2, n, k, ak1, ak2, bk, d, d0, c) :-
+  i1 = 0, i2 = 0,
+  n > 0,
+  0 <= k, k < n,
+  (ak1 = ak2 and bk = 1) or (ak1 <> ak2 and bk = 0),
+  d = 0,
+  d0 >= 0,
+  c = 0.
+
+
+(******************************************************************************)
+(* TF TRANSITION -- P1 steps (stride 1), P2 waits                            *)
+(*                                                                            *)
+(* P1 processes A1[i1]. i1' = i1 + 1.                                       *)
+(* cost1 may increase by 1 if A1[i1] > 0.                                   *)
+(* c = cost1 - cost2, so c' = c + 1 or c' = c.                              *)
+(******************************************************************************)
+
+Inv(i1', i2, n, kp, ak1', ak2', bk', d', d0, c') :-
+  Inv(i1, i2, n, k, ak1, ak2, bk, d, d0, c),
+  i1 < n,
+  PickK(i1, i2, n, k, ak1, ak2, bk, d, d0, c, kp),
+  SchTF(i1, i2, n, kp, ak1p, ak2p, bkp, d, d0, c),
+  (
+    (i1 = kp and ak1p > 0 and c' = c + 1)
+    or
+    (i1 = kp and ak1p <= 0 and c' = c)
+    or
+    (i1 <> kp and c' = c + 1)
+    or
+    (i1 <> kp and c' = c)
+  ),
+  d' = d,
+  i1' = i1 + 1,
+  ak1' = ak1p, ak2' = ak2p,
+  (ak1' = ak2' and bk' = 1 or ak1' <> ak2' and bk' = 0).
+
+
+(******************************************************************************)
+(* FT TRANSITION -- P2 steps (stride 2), P1 waits                            *)
+(*                                                                            *)
+(* P2 processes A2[i2]. i2' = i2 + 2.                                       *)
+(* cost2 may increase by 1 if A2[i2] > 0.                                   *)
+(* c = cost1 - cost2, so c' = c - 1 or c' = c.                              *)
+(******************************************************************************)
+
+Inv(i1, i2', n, kp, ak1', ak2', bk', d', d0, c') :-
+  Inv(i1, i2, n, k, ak1, ak2, bk, d, d0, c),
+  i2 < n,
+  PickK(i1, i2, n, k, ak1, ak2, bk, d, d0, c, kp),
+  SchFT(i1, i2, n, kp, ak1p, ak2p, bkp, d, d0, c),
+  (
+    (i2 = kp and ak2p > 0 and c' = c - 1)
+    or
+    (i2 = kp and ak2p <= 0 and c' = c)
+    or
+    (i2 <> kp and c' = c - 1)
+    or
+    (i2 <> kp and c' = c)
+  ),
+  d' = d,
+  i2' = i2 + 2,
+  ak1' = ak1p, ak2' = ak2p,
+  (ak1' = ak2' and bk' = 1 or ak1' <> ak2' and bk' = 0).
+
+
+(******************************************************************************)
+(* TT TRANSITION -- Both step simultaneously                                  *)
+(*                                                                            *)
+(* P1 processes A1[i1], i1' = i1 + 1.                                       *)
+(* P2 processes A2[i2], i2' = i2 + 2.                                       *)
+(*                                                                            *)
+(* HIT-HIT equal (i1=i2=kp, bkp=1): same branch, costs cancel, d+1.        *)
+(* HIT-HIT unequal (i1=i2=kp, bkp=0): c' in {c-1, c, c+1}.               *)
+(* MISS (at least one not at kp): c' in {c-1, c, c+1}.                     *)
+(******************************************************************************)
+
+Inv(i1', i2', n, kp, ak1', ak2', bk', d', d0, c') :-
+  Inv(i1, i2, n, k, ak1, ak2, bk, d, d0, c),
+  i1 < n, i2 < n,
+  PickK(i1, i2, n, k, ak1, ak2, bk, d, d0, c, kp),
+  SchTT(i1, i2, n, kp, ak1p, ak2p, bkp, d, d0, c),
+  (
+    (i1 = kp and i2 = kp and bkp = 1
+     and c' = c
+     and d' = d + 1)
+    or
+    (i1 = kp and i2 = kp and bkp = 0
+     and (c' = c - 1 or c' = c or c' = c + 1)
+     and d' = d)
+    or
+    ((i1 <> kp or i2 <> kp)
+     and (c' = c - 1 or c' = c or c' = c + 1)
+     and d' = d)
+  ),
+  i1' = i1 + 1,
+  i2' = i2 + 2,
+  ak1' = ak1p,
+  ak2' = ak2p,
+  (ak1' = ak2' and bk' = 1 or ak1' <> ak2' and bk' = 0).
+
+
+(******************************************************************************)
+(* SCHEDULER FAIRNESS                                                         *)
+(******************************************************************************)
+
+i1 < n :-
+  Inv(i1, i2, n, k, ak1, ak2, bk, d, d0, c),
+  SchTF(i1, i2, n, k, ak1, ak2, bk, d, d0, c),
+  i2 < n.
+
+i2 < n :-
+  Inv(i1, i2, n, k, ak1, ak2, bk, d, d0, c),
+  SchFT(i1, i2, n, k, ak1, ak2, bk, d, d0, c),
+  i1 < n.
+
+i1 < n and i2 < n :-
+  Inv(i1, i2, n, k, ak1, ak2, bk, d, d0, c),
+  SchTT(i1, i2, n, k, ak1, ak2, bk, d, d0, c).
+
+
+(******************************************************************************)
+(* SCHEDULER DISJUNCTION                                                      *)
+(******************************************************************************)
+
+SchTF(i1, i2, n, k, ak1, ak2, bk, d, d0, c),
+SchFT(i1, i2, n, k, ak1, ak2, bk, d, d0, c),
+SchTT(i1, i2, n, k, ak1, ak2, bk, d, d0, c) :-
+  Inv(i1, i2, n, k, ak1, ak2, bk, d, d0, c),
+  i1 < n or i2 < n.
+
+
+(******************************************************************************)
+(* PICKK                                                                      *)
+(*                                                                            *)
+(* Searching: refocus when i1 = i2 (aligned at even position).               *)
+(* The scheduler can arrange alignment via TT then TF.                       *)
+(* Settled: keep current cell once d >= d0.                                  *)
+(******************************************************************************)
+
+PickK(i1, i2, n, k, ak1, ak2, bk, d, d0, c, i1) :-
+  Inv(i1, i2, n, k, ak1, ak2, bk, d, d0, c)
+  and i1 = i2 and i1 < n
+  and d < d0.
+
+PickK(i1, i2, n, k, ak1, ak2, bk, d, d0, c, k) :-
+  Inv(i1, i2, n, k, ak1, ak2, bk, d, d0, c),
+  d >= d0.
+
+
+(******************************************************************************)
+(* GOAL: cost1 - cost2 > n - d0 at termination -- UNSAT = verified           *)
+(******************************************************************************)
+
+c > n - d0 :-
+  Inv(i1, i2, n, k, ak1, ak2, bk, d, d0, c),
+  n <= i1, n <= i2,
+  d >= d0.`.trim();
+
+function switchFile(fileId, el) {
+  currentFile = fileId;
+  document.querySelectorAll('.file-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('current-filename').textContent = fileNames[fileId];
+  renderSource();
+}
+
+// Render source with line numbers and syntax highlighting
+function renderSource() {
+  const lines = sourceFiles[currentFile].split('\n');
+  const numEl = document.getElementById('line-nums');
+  const codeEl = document.getElementById('source-code');
+
+  let numsHtml = '';
+  let codeHtml = '';
+
+  lines.forEach((line, i) => {
+    numsHtml += '<span>' + (i + 1) + '</span>';
+    codeHtml += highlightLine(escapeHtml(line)) + '\n';
+  });
+
+  numEl.innerHTML = numsHtml;
+  codeEl.innerHTML = codeHtml;
+}
+
+function escapeHtml(s) {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+function highlightLine(line) {
+  // Comments
+  line = line.replace(/(\(\*.*?\*\))/g, '<span class="comment">$1</span>');
+  line = line.replace(/(\/\/.*$)/g, '<span class="comment">$1</span>');
+
+  // Predicates
+  line = line.replace(/\b(Inv|SchTF|SchFT|SchTT|PickK|Wit)\b/g, '<span class="predicate">$1</span>');
+
+  // Keywords
+  line = line.replace(/\b(and|or|not)\b/g, '<span class="keyword">$1</span>');
+  line = line.replace(/(:-)/g, '<span class="keyword">$1</span>');
+
+  // Booleans and types
+  line = line.replace(/\b(bool|true|false)\b/g, '<span class="bool">$1</span>');
+
+  // Operators
+  line = line.replace(/(&lt;=|&gt;=|&lt;&gt;|&lt;|&gt;)/g, '<span class="operator">$1</span>');
+
+  return line;
+}
+
+function copySource() {
+  navigator.clipboard.writeText(sourceFiles[currentFile]).then(() => {
+    const btn = document.querySelector('.copy-btn');
+    btn.textContent = 'Copied!';
+    setTimeout(() => btn.textContent = 'Copy to clipboard', 2000);
+  });
+}
+
+// Initialize
+renderSource();
+</script>
+
+</body>
+</html>

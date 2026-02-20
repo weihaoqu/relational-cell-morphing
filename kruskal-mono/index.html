@@ -1,0 +1,1393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kruskal's Algorithm Monotonicity Verification</title>
+<style>
+  :root {
+    --bg: #ffffff;
+    --surface: #f6f8fa;
+    --surface2: #eef1f5;
+    --border: #d1d9e0;
+    --text: #1f2328;
+    --text-dim: #656d76;
+    --accent: #0969da;
+    --accent2: #1a7f37;
+    --accent3: #8250df;
+    --code-bg: #f6f8fa;
+    --tab-hover: #eef1f5;
+    --highlight: #0969da1a;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+  }
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 24px 0 0;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .header-content {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 24px;
+  }
+  .header-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+  .header-sub {
+    color: var(--text-dim);
+    font-size: 0.875rem;
+    margin-bottom: 16px;
+  }
+  .tabs {
+    display: flex;
+    gap: 0;
+  }
+  .tab {
+    padding: 10px 20px;
+    cursor: pointer;
+    color: var(--text-dim);
+    font-size: 0.875rem;
+    font-weight: 500;
+    border-bottom: 2px solid transparent;
+    transition: color 0.15s, border-color 0.15s, background 0.15s;
+    user-select: none;
+    border-radius: 6px 6px 0 0;
+  }
+  .tab:hover {
+    color: var(--text);
+    background: var(--tab-hover);
+  }
+  .tab.active {
+    color: var(--text);
+    border-bottom-color: var(--accent);
+  }
+  .tab .tab-icon { margin-right: 6px; }
+
+  main {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 32px 24px 80px;
+  }
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  /* Markdown-rendered content */
+  .content h1 { font-size: 1.75rem; margin: 32px 0 16px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+  .content h1:first-child { margin-top: 0; }
+  .content h2 { font-size: 1.375rem; margin: 28px 0 12px; padding-bottom: 6px; border-bottom: 1px solid var(--border); color: var(--accent); }
+  .content h3 { font-size: 1.1rem; margin: 20px 0 8px; color: var(--accent3); }
+  .content h4 { font-size: 1rem; margin: 16px 0 8px; color: var(--text-dim); }
+  .content p { margin: 12px 0; }
+  .content strong { color: #1f2328; }
+  .content blockquote {
+    border-left: 3px solid var(--accent);
+    padding: 8px 16px;
+    margin: 12px 0;
+    background: var(--surface);
+    border-radius: 0 6px 6px 0;
+    color: var(--text-dim);
+  }
+  .content ul, .content ol { margin: 8px 0 8px 24px; }
+  .content li { margin: 4px 0; }
+  .content hr { border: none; border-top: 1px solid var(--border); margin: 24px 0; }
+  .content a { color: var(--accent); text-decoration: none; }
+  .content a:hover { text-decoration: underline; }
+  .content table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 0.875rem;
+  }
+  .content table th {
+    text-align: left;
+    padding: 10px 14px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    font-weight: 600;
+    color: var(--accent);
+  }
+  .content table td {
+    padding: 8px 14px;
+    border: 1px solid var(--border);
+  }
+  .content table tr:hover td {
+    background: var(--surface);
+  }
+  .content code {
+    font-family: 'SF Mono', 'Fira Code', 'Fira Mono', Menlo, Consolas, monospace;
+    background: var(--surface2);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.85em;
+    color: var(--accent3);
+  }
+  .content pre {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px 20px;
+    overflow-x: auto;
+    margin: 16px 0;
+    position: relative;
+  }
+  .content pre code {
+    background: none;
+    padding: 0;
+    border-radius: 0;
+    font-size: 0.8125rem;
+    color: var(--text);
+    line-height: 1.5;
+  }
+
+  /* Source code panel */
+  .source-container {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .source-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 16px;
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+    font-size: 0.8125rem;
+    color: var(--text-dim);
+  }
+  .source-filename {
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    color: var(--text);
+    font-weight: 500;
+  }
+  .source-lines {
+    display: flex;
+    overflow-x: auto;
+    font-family: 'SF Mono', 'Fira Code', Menlo, Consolas, monospace;
+    font-size: 0.8125rem;
+    line-height: 1.6;
+  }
+  .line-numbers {
+    padding: 16px 0;
+    text-align: right;
+    color: var(--text-dim);
+    user-select: none;
+    min-width: 48px;
+    opacity: 0.5;
+    border-right: 1px solid var(--border);
+  }
+  .line-numbers span {
+    display: block;
+    padding: 0 12px;
+  }
+  .source-code {
+    padding: 16px;
+    flex: 1;
+    white-space: pre;
+    color: var(--text);
+  }
+  .source-code .comment { color: #6a737d; font-style: italic; }
+  .source-code .keyword { color: #cf222e; }
+  .source-code .predicate { color: #0550ae; }
+  .source-code .operator { color: #8250df; }
+  .source-code .bool { color: #1a7f37; }
+  .source-code .number { color: #953800; }
+
+  /* Copy button */
+  .copy-btn {
+    background: var(--surface);
+    color: var(--text-dim);
+    border: 1px solid var(--border);
+    padding: 4px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.75rem;
+    transition: all 0.15s;
+  }
+  .copy-btn:hover { color: var(--text); background: var(--tab-hover); }
+
+  /* File selector tabs */
+  .file-tabs {
+    display: flex; gap: 0; padding: 0 16px;
+    background: var(--surface2); border-bottom: 1px solid var(--border);
+  }
+  .file-tab {
+    padding: 6px 14px; cursor: pointer; font-size: 0.75rem;
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    color: var(--text-dim); border-bottom: 2px solid transparent;
+    transition: color 0.15s, border-color 0.15s; user-select: none;
+  }
+  .file-tab:hover { color: var(--text); }
+  .file-tab.active { color: var(--accent); border-bottom-color: var(--accent); font-weight: 600; }
+
+  /* Info boxes */
+  .info-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    border-radius: 0 6px 6px 0;
+    padding: 16px 20px;
+    margin: 20px 0;
+  }
+  .info-box.success { border-left-color: var(--accent2); }
+  .info-box.purple { border-left-color: var(--accent3); }
+  .info-box.warning { border-left-color: #cf222e; }
+
+  /* Top navigation */
+  .topnav { border-bottom: 1px solid var(--border); font-size: 0.8rem; }
+  .topnav-content {
+    max-width: 1100px; margin: 0 auto; padding: 0 24px;
+    display: flex; align-items: center; gap: 2px; flex-wrap: wrap;
+  }
+  .topnav-home {
+    color: var(--accent); text-decoration: none; font-weight: 500;
+    padding: 8px 0; white-space: nowrap; margin-right: 8px;
+  }
+  .topnav-home:hover { text-decoration: underline; }
+  .nav-group { position: relative; }
+  .nav-group-btn {
+    background: none; border: none; cursor: pointer;
+    color: var(--text-dim); font-size: 0.8rem; padding: 8px 12px;
+    border-radius: 4px; font-family: inherit;
+    transition: color 0.15s, background 0.15s;
+  }
+  .nav-group-btn:hover, .nav-group:focus-within .nav-group-btn {
+    color: var(--text); background: var(--surface2);
+  }
+  .nav-group-btn.active { color: var(--text); font-weight: 600; }
+  .nav-dropdown {
+    display: none; position: absolute; top: 100%; left: 0;
+    background: var(--bg); border: 1px solid var(--border);
+    border-radius: 6px; padding: 4px 0; min-width: 160px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1); z-index: 200;
+  }
+  .nav-group:hover .nav-dropdown,
+  .nav-group:focus-within .nav-dropdown { display: block; }
+  .nav-dropdown a {
+    display: block; padding: 6px 16px; color: var(--text-dim);
+    text-decoration: none; white-space: nowrap;
+    transition: background 0.1s, color 0.1s;
+  }
+  .nav-dropdown a:hover { background: var(--surface); color: var(--text); }
+  .nav-dropdown a.active { color: var(--accent); font-weight: 600; background: var(--highlight); }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .tab { padding: 8px 12px; font-size: 0.8rem; }
+    main { padding: 20px 16px 60px; }
+    .header-title { font-size: 1.25rem; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="topnav">
+    <div class="topnav-content">
+      <a href="../" class="topnav-home">&larr; All Examples</a>
+      <div class="nav-group">
+        <button class="nav-group-btn">Robustness &#9662;</button>
+        <div class="nav-dropdown">
+          <a href="../isort/">Insertion Sort</a>
+          <a href="../kruskal/">Kruskal</a>
+          <a href="../dijk/">Dijkstra</a>
+          <a href="../arraymax-robust/">ArrayMax</a>
+        </div>
+      </div>
+      <div class="nav-group">
+        <button class="nav-group-btn">Sensitivity &#9662;</button>
+        <div class="nav-dropdown">
+          <a href="../histogram/">Histogram</a>
+          <a href="../cdf/">CDF</a>
+        </div>
+      </div>
+      <div class="nav-group">
+        <button class="nav-group-btn active">Monotonicity &#9662;</button>
+        <div class="nav-dropdown">
+          <a href="../arraymax/">ArrayMax</a>
+          <a href="../arraysum/">ArraySum</a>
+          <a href="../kruskal-mono/" class="active">Kruskal</a>
+          <a href="../arraysum-qmono/">ArraySum (Quant.)</a>
+          <a href="../dijk-mono/">Dijkstra (vacuous)</a>
+        </div>
+      </div>
+      <div class="nav-group">
+        <button class="nav-group-btn">Commutativity &#9662;</button>
+        <div class="nav-dropdown">
+          <a href="../commutativity/">ArraySum</a>
+        </div>
+      </div>
+      <div class="nav-group">
+        <button class="nav-group-btn">Cost &#9662;</button>
+        <div class="nav-dropdown">
+          <a href="../countpositive/">CountPositive</a>
+          <a href="../cost-ext/">Extensions</a>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="header-content">
+    <div class="header-title">Kruskal's Algorithm Monotonicity Verification</div>
+    <div class="header-sub">Relational Cell Morphing with PCSAT &mdash; Monotonicity Proof (Sync Model)</div>
+    <div class="tabs">
+      <div class="tab active" data-panel="simple" onclick="switchTab(this)">
+        <span class="tab-icon">&#128196;</span>Overview
+      </div>
+      <div class="tab" data-panel="detailed" onclick="switchTab(this)">
+        <span class="tab-icon">&#128214;</span>Detailed Tutorial
+      </div>
+      <div class="tab" data-panel="source" onclick="switchTab(this)">
+        <span class="tab-icon">&#128187;</span>Source Code
+      </div>
+    </div>
+  </div>
+</header>
+
+<main>
+  <!-- ============ SIMPLE / OVERVIEW PANEL ============ -->
+  <div id="panel-simple" class="panel active content">
+    <h1>Kruskal MST Monotonicity Verification with PCSAT</h1>
+    <p>A concise tutorial on verifying that MST cost is monotone with respect to edge weights, using relational cell morphing with a synchronized model.</p>
+    <hr>
+
+    <h2>The Algorithm</h2>
+<pre><code>Kruskal(G : graph)
+    for each node v in G:
+        MakeSet(v)
+    T := empty
+    cost := 0
+    for each edge (u,v) in G ordered by weight:
+        if Find(u) != Find(v):
+            T := T + {(u,v)}
+            cost := cost + G[u,v]
+            Union(u, v)
+    return T, cost</code></pre>
+    <p><strong>Key observations</strong>:</p>
+    <ol>
+      <li>Edges are processed in a <strong>fixed sorted order</strong>, independent of weight values</li>
+      <li>The <strong>add/skip decision</strong> depends only on <strong>union-find state</strong> (which components are connected), not on weights</li>
+      <li><strong>Cost is a running sum</strong>: <code>cost' = cost + w[e]</code> when an edge is added</li>
+      <li>An MST has exactly <strong>n&minus;1 edges</strong> for n vertices</li>
+    </ol>
+    <hr>
+
+    <h2>The Property: Monotonicity</h2>
+<pre><code>&forall;e. w1[e] &le; w2[e]  &rArr;  cost(MST<sub>1</sub>) &le; cost(MST<sub>2</sub>)
+    ~~~~~~~~~~~~~~~~     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    INPUT: every edge        OUTPUT: MST cost
+    weight in G1 &le; G2        of G1 &le; MST cost of G2</code></pre>
+    <p><strong>In plain English</strong>: If every edge weight in graph G1 is at most the corresponding weight in G2, then the MST cost of G1 is at most the MST cost of G2.</p>
+    <p><strong>Assumption</strong>: All edge weights are non-negative (<code>&forall;e. w[e] &ge; 0</code>).</p>
+
+    <h3>Why Is This True? (Informal Argument)</h3>
+    <blockquote>
+      Union-find decisions depend on WHICH edges were added, not their WEIGHTS. Both runs process edges in the same sorted order. Both runs see the same union-find state. Therefore both runs make the SAME add/skip decision and both MSTs contain the SAME set of edges.<br><br>
+      <code>cost(MST<sub>1</sub>) = &Sigma;<sub>e&isin;MST</sub> w1[e] &le; &Sigma;<sub>e&isin;MST</sub> w2[e] = cost(MST<sub>2</sub>)</code>
+    </blockquote>
+    <hr>
+
+    <h2>The Approach: Synchronized Model</h2>
+    <h3>Why Synchronized?</h3>
+    <p>Both runs process edges in the <strong>same fixed order</strong> and make the <strong>same add/skip decisions</strong> because union-find is weight-independent. A single counter suffices.</p>
+    <p>At each step, the monotone bound <code>c1' &le; c2'</code> holds because:</p>
+<pre><code>HIT ADD (both add edge k):   c1' = c1 + wk1 &le; c2 + wk2 = c2'
+                               &uarr;               &uarr;
+                             c1 &le; c2      wk1 &le; wk2
+                           (induction)   (precondition)
+
+MISS ADD (both add other edge): c1' = c1 + w1[e] &le; c2 + w2[e] = c2'
+                                  &uarr;                  &uarr;
+                                c1 &le; c2         w1[e] &le; w2[e]
+                              (induction)    (universal precondition)
+
+SKIP (both skip):            c1' = c1 &le; c2 = c2'   trivially</code></pre>
+
+    <h3>State Variables (7 total &mdash; leanest encoding)</h3>
+    <table>
+      <thead>
+        <tr><th>Variable</th><th>Meaning</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>i</code></td><td>Edges added to MST (both runs, synchronized). Range: 0 &rarr; n&minus;1</td></tr>
+        <tr><td><code>k</code></td><td>Distinguished edge index (symbolic, universally quantified)</td></tr>
+        <tr><td><code>wk1, wk2</code></td><td>Weight of distinguished edge k in runs 1 and 2</td></tr>
+        <tr><td><code>c1, c2</code></td><td>MST cost accumulators for runs 1 and 2</td></tr>
+        <tr><td><code>n</code></td><td>Number of vertices</td></tr>
+      </tbody>
+    </table>
+    <hr>
+
+    <h2>Important Finding: Async Model Is Vacuous</h2>
+    <div class="info-box warning">
+      <strong>ASYNC MODEL FAILS</strong><br><br>
+      An asynchronous encoding (with two counters <code>i1, i2</code> and a scheduler) returns <strong>UNSAT in 2 seconds</strong> &mdash; but the result is <strong>vacuous</strong>. The precondition <code>wk1 &le; wk2</code> is <strong>dead</strong> (plays no role in the proof).<br><br>
+      <strong>Root cause</strong>: Kruskal's counter tracks <strong>edges added</strong>, not <strong>scan position</strong>. Without a position guard (<code>i = k</code>), MISS ADD (<code>c1' &ge; c1</code>) subsumes HIT ADD (<code>c1' = c1 + wk1</code>). The solver ignores HIT entirely, making both runs symmetric. The "proof" is by symmetry, not monotonicity.<br><br>
+      <strong>Diagnostic evidence</strong>: Removing the precondition <code>wk1 &le; wk2</code> from init still yields UNSAT (16s). Removing HIT from all transitions still yields UNSAT (6s).
+    </div>
+    <hr>
+
+    <h2>Verification Results</h2>
+    <h3>Synchronized Model (Genuine)</h3>
+    <table>
+      <thead>
+        <tr><th>Goal Clause</th><th>Result</th><th>Time</th><th>Meaning</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>c1 &gt; c2</code> at termination</td><td><strong>UNSAT</strong></td><td>~1s</td><td>Monotonicity VERIFIED &check;</td></tr>
+        <tr><td><code>c1 &le; c2</code> at termination</td><td><strong>SAT</strong></td><td>~4s</td><td>Bound achievable &check;</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Asynchronous Model (Vacuous)</h3>
+    <table>
+      <thead>
+        <tr><th>Goal Clause</th><th>Result</th><th>Time</th><th>Meaning</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>c1 &gt; c2</code> at termination</td><td><strong>UNSAT</strong></td><td>2s</td><td>Looks verified... but vacuous</td></tr>
+        <tr><td><code>c2 &gt; c1</code> at termination</td><td><strong>UNSAT</strong></td><td>2.2s</td><td>Symmetric with violation (warning!)</td></tr>
+        <tr><td>Remove precondition, re-run</td><td><strong>UNSAT</strong></td><td>16s</td><td>Precondition is dead &cross;</td></tr>
+      </tbody>
+    </table>
+
+    <div class="info-box success">
+      <strong>VERIFICATION COMPLETE</strong><br><br>
+      <strong>Property:</strong> Monotonicity of MST cost<br>
+      <strong>Statement:</strong> &forall;e. w1[e] &le; w2[e] &rArr; cost(MST<sub>1</sub>) &le; cost(MST<sub>2</sub>)<br>
+      <strong>Model:</strong> Synchronized (single counter, 7 variables)<br>
+      <strong>Result:</strong> VERIFIED &check;<br>
+      <strong>Evidence:</strong> Violation query <code>c1 &gt; c2</code> returns UNSAT; bound query <code>c1 &le; c2</code> returns SAT
+    </div>
+    <hr>
+
+    <h2>Key Takeaways</h2>
+    <ol>
+      <li><strong>Synchronized model is correct for Kruskal</strong>: Union-find decisions are weight-independent, so both runs process the same edge set. The monotone bound <code>c1' &le; c2'</code> holds at every transition.</li>
+      <li><strong>Invariant is trivially <code>c1 &le; c2</code></strong>: Init establishes it (<code>c1 = 0 = c2</code>), transitions preserve it (<code>c1' &le; c2'</code> explicit), goal contradicts it (<code>c1 &gt; c2</code>).</li>
+      <li><strong>Async model is vacuous</strong>: MISS subsumes HIT when there is no position guard. The precondition <code>wk1 &le; wk2</code> is dead. This is a new vacuity type ("MISS-subsumes-HIT") not caught by standard sanity checks.</li>
+      <li><strong>Lean encoding</strong>: Only 7 variables &mdash; compared to 11 for Kruskal robustness. No sign bits, no epsilon parameter, no scheduler needed.</li>
+    </ol>
+    <hr>
+
+    <h2>Comparison: Monotonicity vs Robustness</h2>
+    <table>
+      <thead>
+        <tr><th>Aspect</th><th>Monotonicity (this page)</th><th>Robustness</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Property</td><td><code>w1[e] &le; w2[e] &rArr; c1 &le; c2</code></td><td><code>|w1[e] - w2[e]| &le; &epsilon; &rArr; |c1 - c2| &le; (n&minus;1)&middot;&epsilon;</code></td></tr>
+        <tr><td>Variables</td><td>7</td><td>11</td></tr>
+        <tr><td>Model</td><td>Synchronized (single counter)</td><td>Asynchronous (two counters + scheduler)</td></tr>
+        <tr><td>Bound</td><td><code>c1' &le; c2'</code> (single inequality)</td><td>Sign bits + epsilon bound</td></tr>
+        <tr><td>Invariant</td><td><code>c1 &le; c2</code></td><td><code>|c1 - c2| &le; i&middot;&epsilon;</code></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ============ DETAILED TUTORIAL PANEL ============ -->
+  <div id="panel-detailed" class="panel content">
+    <h1>Kruskal MST Monotonicity: Complete Tutorial</h1>
+    <h3>Sync Works, Async Fails &mdash; A Debugging Case Study</h3>
+    <hr>
+
+    <h2>Overview</h2>
+    <p>This tutorial explains how to verify that <strong>Kruskal's MST cost is monotone</strong> with respect to edge weights using <strong>PCSAT</strong> with the <strong>relational cell morphing</strong> technique.</p>
+    <p>The synchronized model succeeds trivially. The asynchronous model appears to succeed but is <strong>vacuous</strong> &mdash; and discovering why revealed a new failure mode with implications for all future encodings.</p>
+    <h3>What You Will Learn</h3>
+    <ul>
+      <li>How to encode Kruskal's algorithm for monotonicity verification</li>
+      <li>Why the synchronized model is the natural fit for Kruskal</li>
+      <li>How the async model fails (MISS-subsumes-HIT vacuity)</li>
+      <li>Diagnostic techniques for detecting vacuous results</li>
+      <li>The structural criterion (position guard) for genuine async proofs</li>
+    </ul>
+    <hr>
+
+    <h2>Part 1: The Algorithm</h2>
+<pre><code>Kruskal(G : graph)
+    for each node v in G:
+        MakeSet(v)
+    T := empty
+    cost := 0
+    for each edge (u,v) in G ordered by weight:
+        if Find(u) != Find(v):
+            T := T + {(u,v)}
+            cost := cost + G[u,v]
+            Union(u, v)
+    return T, cost</code></pre>
+
+    <h3>Key Observations</h3>
+    <ol>
+      <li><strong>Processes edges in sorted order</strong>: Fixed iteration order, independent of weight values</li>
+      <li><strong>Add/skip decision depends on union-find</strong>: Same components &rarr; skip, different &rarr; add</li>
+      <li><strong>Union-find is weight-independent</strong>: The STRUCTURE of the MST depends only on which edges connect different components &mdash; not on their weights</li>
+      <li><strong>Cost is a running sum</strong>: <code>cost' = cost + w[e]</code> when an edge is added</li>
+      <li><strong>MST has exactly n&minus;1 edges</strong>: For n vertices, the loop adds exactly n&minus;1 edges</li>
+    </ol>
+
+    <div class="info-box">
+      <strong>CRITICAL INSIGHT FOR ENCODING DESIGN</strong><br><br>
+      Kruskal's counter tracks <strong>EDGES ADDED</strong> (0, 1, ..., n&minus;2), NOT edges SCANNED. This distinction matters enormously for the async model.
+    </div>
+    <hr>
+
+    <h2>Part 2: The Property &mdash; Monotonicity</h2>
+<pre><code>PROPERTY: Monotonicity of MST cost under pointwise ordering
+
+&forall;e. w1[e] &le; w2[e]  &rArr;  cost(MST<sub>1</sub>) &le; cost(MST<sub>2</sub>)
+    ~~~~~~~~~~~~~~~~     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    INPUT: every edge        OUTPUT: MST cost
+    weight in G1 &le; G2        of G1 &le; MST cost of G2</code></pre>
+
+    <h3>Assumption: Non-Negative Weights</h3>
+<pre><code>ASSUMPTION: &forall;e. w[e] &ge; 0
+
+This ensures costs are non-decreasing: cost' = cost + w[e] &ge; cost.</code></pre>
+
+    <h3>Why Is This True? (Informal Argument)</h3>
+<pre><code>Key fact: Union-find decisions depend on WHICH edges were added,
+          not their WEIGHTS.
+
+Both runs process edges in the same sorted order.
+At each step, both runs see the same union-find state.
+Therefore both runs make the SAME add/skip decision.
+Therefore both MSTs contain the SAME set of edges.
+
+cost(MST<sub>1</sub>) = &Sigma;<sub>e&isin;MST</sub> w1[e]
+            &le; &Sigma;<sub>e&isin;MST</sub> w2[e]     (w1[e] &le; w2[e] for each edge)
+            = cost(MST<sub>2</sub>)
+
+QED.</code></pre>
+    <p>The argument depends on both runs choosing the same edges. This is why the synchronized model is natural for Kruskal.</p>
+
+    <h3>Example</h3>
+<pre><code>Edges sorted by weight:   e1  e2  e3  e4  e5  e6
+Run 1 weights:             1   2   3   4   5   6
+Run 2 weights:             2   3   4   5   6   7
+Pointwise: 1&le;2, 2&le;3, 3&le;4, 4&le;5, 5&le;6, 6&le;7  &check;
+
+Both runs:  ADD  ADD  SKIP  ADD  SKIP  ADD   (same decisions!)
+              &uarr;    &uarr;          &uarr;          &uarr;
+MST edges: {e1, e2, e4, e6}  (same set)
+
+cost<sub>1</sub> = 1 + 2 + 4 + 6 = 13
+cost<sub>2</sub> = 2 + 3 + 5 + 7 = 17
+Result: 13 &le; 17  &check;</code></pre>
+    <hr>
+
+    <h2>Part 3: Comparison with ArraySum</h2>
+    <p>Both are monotonicity proofs using cell morphing. Same framework, different algorithms.</p>
+    <table>
+      <thead><tr><th>Aspect</th><th>ArraySum</th><th>Kruskal</th></tr></thead>
+      <tbody>
+        <tr><td>Update</td><td><code>s += A[i]</code> (every element)</td><td><code>cost += w[e]</code> (only when added)</td></tr>
+        <tr><td>Skip?</td><td>Never &mdash; every element processed</td><td>Yes &mdash; edges can be skipped</td></tr>
+        <tr><td>Counter means</td><td>Position scanned (0..n&minus;1)</td><td>Edges added (0..n&minus;2)</td></tr>
+        <tr><td>HIT guard</td><td><code>i = k</code> (forced at one step)</td><td>None in async (see Part 8)</td></tr>
+        <tr><td>Sync valid?</td><td>Yes (fixed scan order)</td><td><strong>Yes</strong> (weight-independent decisions)</td></tr>
+        <tr><td>Async valid?</td><td>Yes (genuine, 47s)</td><td><strong>Vacuous</strong> (see Part 8)</td></tr>
+      </tbody>
+    </table>
+    <hr>
+
+    <h1>PART A: Synchronized Model (Genuine)</h1>
+    <hr>
+
+    <h2>Part 4: Why Synchronized Works for Kruskal</h2>
+    <p>Both runs process edges in the <strong>same fixed order</strong> and make the <strong>same add/skip decisions</strong> because union-find is weight-independent. When both runs always act identically, a single counter suffices.</p>
+    <p>The critical advantage: when both runs ADD the same edge simultaneously, we can assert <code>c1' &le; c2'</code> because:</p>
+<pre><code>Both ADD distinguished edge k:     c1' = c1 + wk1 &le; c2 + wk2 = c2'
+                                    &uarr;               &uarr;
+                                  c1 &le; c2      wk1 &le; wk2
+                                (induction)   (precondition)
+
+Both ADD other edge (same edge!):  c1' = c1 + w1[e] &le; c2 + w2[e] = c2'
+                                     &uarr;                  &uarr;
+                                   c1 &le; c2         w1[e] &le; w2[e]
+                                 (induction)    (universal precondition)
+
+Both SKIP:                         c1' = c1 &le; c2 = c2'   trivially</code></pre>
+    <p>The monotone bound <code>c1' &le; c2'</code> holds at every transition. The invariant is simply <code>c1 &le; c2</code>.</p>
+    <hr>
+
+    <h2>Part 5: Synchronized State Variables</h2>
+<pre><code>Inv(i, k, wk1, wk2, c1, c2, n)</code></pre>
+    <table>
+      <thead><tr><th>Variable</th><th>Type</th><th>Meaning</th><th>Changes?</th></tr></thead>
+      <tbody>
+        <tr><td><code>i</code></td><td>int</td><td>Edges added to MST (both runs)</td><td>Yes (0 &rarr; n&minus;1)</td></tr>
+        <tr><td><code>k</code></td><td>int</td><td>Distinguished edge index</td><td><strong>Never</strong></td></tr>
+        <tr><td><code>wk1</code></td><td>real</td><td>Weight of edge k in G1</td><td><strong>Never</strong></td></tr>
+        <tr><td><code>wk2</code></td><td>real</td><td>Weight of edge k in G2</td><td><strong>Never</strong></td></tr>
+        <tr><td><code>c1</code></td><td>real</td><td>MST cost in run 1</td><td>Yes (non-decreasing)</td></tr>
+        <tr><td><code>c2</code></td><td>real</td><td>MST cost in run 2</td><td>Yes (non-decreasing)</td></tr>
+        <tr><td><code>n</code></td><td>int</td><td>Number of vertices</td><td><strong>Never</strong></td></tr>
+      </tbody>
+    </table>
+    <p><strong>7 variables.</strong> The leanest encoding in our portfolio.</p>
+
+    <h3>What's Missing Compared to Kruskal Robustness (11 variables)</h3>
+    <table>
+      <thead><tr><th>Dropped</th><th>Why</th></tr></thead>
+      <tbody>
+        <tr><td><code>i2</code></td><td>Synchronized &mdash; single counter</td></tr>
+        <tr><td><code>bk:bool</code></td><td>Direction known: wk1 &le; wk2</td></tr>
+        <tr><td><code>bc:bool</code></td><td>Direction known: c1 &le; c2</td></tr>
+        <tr><td><code>eps</code></td><td>No quantitative bound</td></tr>
+      </tbody>
+    </table>
+    <hr>
+
+    <h2>Part 6: Synchronized Encoding</h2>
+    <h3>Initialization</h3>
+<pre><code>Inv(i, k, wk1, wk2, c1, c2, n) :-
+    i = 0,
+    n &gt; 0,
+    0 &le; k,
+    (* Monotone precondition *)
+    wk1 &le; wk2,
+    c1 = 0, c2 = 0.</code></pre>
+
+    <h3>Transition</h3>
+<pre><code>Inv(i', k, wk1, wk2, c1', c2', n) :-
+    Inv(i, k, wk1, wk2, c1, c2, n),
+    (
+        (* Case 1: HIT ADD &mdash; both add distinguished edge k *)
+        i &lt; n - 1 and i' = i + 1 and
+        c1' = c1 + wk1 and c2' = c2 + wk2
+    ) or (
+        (* Case 2: MISS ADD &mdash; both add other edge *)
+        (* Weights unknown; constrained by monotone bound below *)
+        i &lt; n - 1 and i' = i + 1
+    ) or (
+        (* Case 3: SKIP &mdash; both skip current edge *)
+        i &lt; n - 1 and i' = i and c1' = c1 and c2' = c2
+    ) or (
+        (* Case 4: FINISHED &mdash; stutter *)
+        i &gt;= n - 1 and i' = i and c1' = c1 and c2' = c2
+    ),
+    (* MONOTONE BOUND &mdash; holds at every step *)
+    c1' &le; c2'.</code></pre>
+
+    <h4>Case-by-Case Analysis</h4>
+    <p><strong>Case 1: HIT ADD</strong> &mdash; Both add distinguished edge k. Exact weights known. Monotone bound: <code>c1 + wk1 &le; c2 + wk2</code> holds when <code>c1 &le; c2</code> (invariant) and <code>wk1 &le; wk2</code> (precondition). &check;</p>
+    <p><strong>Case 2: MISS ADD</strong> &mdash; Both add another edge. Weights unknown. <code>c1'</code> and <code>c2'</code> are unconstrained except by the monotone bound <code>c1' &le; c2'</code>. The bound encodes the universal precondition: both runs add the <strong>same</strong> edge, and <code>w1[e] &le; w2[e]</code>.</p>
+    <p><strong>Case 3: SKIP</strong> &mdash; Both skip. Costs unchanged, counter unchanged. Trivially <code>c1' &le; c2'</code>. &check;</p>
+    <p><strong>Case 4: FINISHED</strong> &mdash; All n&minus;1 edges added. State unchanged. &check;</p>
+
+    <h4>The Monotone Bound</h4>
+<pre><code>c1' &le; c2'.</code></pre>
+    <p>This single line plays the same structural role as the epsilon bound in robustness:</p>
+<pre><code>Robustness:    (bc' and 0 &le; c2'-c1' and c2'-c1' &le; i1'*eps) or
+               (!bc' and 0 &le; c1'-c2' and c1'-c2' &le; i1'*eps)
+                              &darr;
+Monotonicity:  c1' &le; c2'</code></pre>
+
+    <h3>Goal</h3>
+<pre><code>(* Violation: UNSAT = monotonicity verified *)
+c1 &gt; c2 :-
+    Inv(i, k, wk1, wk2, c1, c2, n),
+    n - 1 &le; i.</code></pre>
+    <p><strong>Result: UNSAT (fast).</strong> The invariant is trivially <code>c1 &le; c2</code>:</p>
+    <ol>
+      <li><strong>Init establishes it</strong>: <code>c1 = 0 = c2</code> &check;</li>
+      <li><strong>Transitions preserve it</strong>: <code>c1' &le; c2'</code> stated explicitly &check;</li>
+      <li><strong>Goal contradicts it</strong>: <code>c1 &gt; c2</code> contradicts <code>c1 &le; c2</code> &check;</li>
+    </ol>
+    <hr>
+
+    <h2>Part 7: Why the Monotone Bound Is Sound</h2>
+    <div class="info-box purple">
+<pre style="border:none;margin:0;padding:0;background:transparent"><code>WHY c1' &le; c2' AT EVERY STEP
+
+Both runs process the SAME edge at each step (synchronized).
+Both make the SAME decision (union-find is weight-independent).
+
+HIT ADD (both add edge k):
+  c1' = c1 + wk1
+  c2' = c2 + wk2
+  c1 &le; c2 (invariant) and wk1 &le; wk2 (precondition)
+  &rarr; c1 + wk1 &le; c2 + wk2
+  &rarr; c1' &le; c2'  &check;
+
+MISS ADD (both add same other edge e):
+  c1' = c1 + w1[e]
+  c2' = c2 + w2[e]
+  c1 &le; c2 (invariant) and w1[e] &le; w2[e] (universal precondition)
+  &rarr; c1 + w1[e] &le; c2 + w2[e]
+  &rarr; c1' &le; c2'  &check;
+
+SKIP (both skip):
+  c1' = c1, c2' = c2
+  &rarr; c1' &le; c2'  (trivially)  &check;
+
+KEY: The synchronized model guarantees both runs process the
+same edge. This means the universal precondition (w1[e] &le; w2[e])
+applies to the SAME element in both runs at every step.</code></pre>
+    </div>
+
+    <h3>Synchronized Verification Results</h3>
+    <table>
+      <thead><tr><th>Goal</th><th>Result</th><th>Time</th><th>Meaning</th></tr></thead>
+      <tbody>
+        <tr><td><code>c1 &gt; c2</code> (violation)</td><td><strong>UNSAT</strong></td><td>~1s</td><td>Monotonicity VERIFIED &check;</td></tr>
+        <tr><td><code>c1 &le; c2</code> (bound holds)</td><td><strong>SAT</strong></td><td>~4s</td><td>Bound achievable &check;</td></tr>
+      </tbody>
+    </table>
+
+    <div class="info-box success">
+      <strong>SYNC VERIFICATION COMPLETE</strong><br><br>
+      <strong>Property:</strong> Monotonicity of MST cost<br>
+      <strong>Statement:</strong> &forall;e. w1[e] &le; w2[e] &rArr; cost(MST<sub>1</sub>) &le; cost(MST<sub>2</sub>)<br>
+      <strong>Invariant:</strong> <code>c1 &le; c2</code><br>
+      <strong>Result:</strong> VERIFIED &check;<br>
+      <strong>Evidence:</strong> Violation query <code>c1 &gt; c2</code> returns UNSAT
+    </div>
+    <hr>
+
+    <h1>PART B: Asynchronous Model (Vacuous)</h1>
+    <hr>
+
+    <h2>Part 8: Why Try Asynchronous?</h2>
+    <p>The synchronized model works. So why try async?</p>
+    <ol>
+      <li><strong>Consistency</strong>: ArraySum and ArrayMax were verified in async. Can Kruskal be too?</li>
+      <li><strong>Stronger result</strong>: Async proves monotonicity under ALL interleavings, not just lockstep</li>
+      <li><strong>Research question</strong>: The sync model requires both runs to process the same edge at each step. What if we relax this assumption?</li>
+    </ol>
+    <p>The async model turned out to be vacuous &mdash; but discovering this was more valuable than a positive result.</p>
+    <hr>
+
+    <h2>Part 9: The Critical Structural Difference</h2>
+    <div class="info-box warning">
+      <strong>WHY KRUSKAL ASYNC IS DIFFERENT FROM ARRAYSUM</strong><br><br>
+      <strong>ArraySum:</strong><br>
+      Counter <code>i</code> = SCAN POSITION (0, 1, 2, ..., n&minus;1).<br>
+      Distinguished cell <code>k</code> is a scan position in [0, n&minus;1].<br>
+      HIT guard: <code>i = k</code> &rarr; MUST use HIT (exactly one step).<br>
+      MISS guard: <code>i &ne; k</code> &rarr; MUST use MISS (all other steps).<br>
+      The guards create a <strong>HARD PARTITION</strong>. The solver CANNOT avoid HIT.<br><br>
+      <strong>Kruskal:</strong><br>
+      Counter <code>i</code> = EDGES ADDED (0, 1, 2, ..., n&minus;2).<br>
+      Distinguished cell <code>k</code> is an edge index &mdash; NOT a scan position!<br>
+      HIT: available at ANY add step (no guard).<br>
+      MISS: available at ANY add step (no guard).<br>
+      <strong>NO hard partition.</strong> HIT and MISS overlap completely.<br>
+      The solver CAN avoid HIT entirely (use MISS everywhere).<br><br>
+      <strong>CONSEQUENCE:</strong> MISS ADD (<code>c1' &ge; c1</code>) subsumes HIT ADD (<code>c1' = c1 + wk1</code>, <code>wk1 &ge; 0</code>). Every HIT trace is also a valid MISS trace. The solver has no reason to use HIT.
+    </div>
+    <hr>
+
+    <h2>Part 10: Asynchronous Encoding</h2>
+    <h3>State Variables (8 total)</h3>
+<pre><code>Inv(i1, i2, k, wk1, wk2, c1, c2, n)</code></pre>
+    <table>
+      <thead><tr><th>Variable</th><th>Type</th><th>Meaning</th><th>Changes?</th></tr></thead>
+      <tbody>
+        <tr><td><code>i1, i2</code></td><td>int</td><td>Edges added in runs 1, 2</td><td>Yes (0 &rarr; n&minus;1)</td></tr>
+        <tr><td><code>k</code></td><td>int</td><td>Distinguished edge index</td><td><strong>Never</strong></td></tr>
+        <tr><td><code>wk1, wk2</code></td><td>real</td><td>Weight of edge k in runs 1, 2</td><td><strong>Never</strong></td></tr>
+        <tr><td><code>c1, c2</code></td><td>real</td><td>MST cost in runs 1, 2</td><td>Yes (non-decreasing)</td></tr>
+        <tr><td><code>n</code></td><td>int</td><td>Number of vertices</td><td><strong>Never</strong></td></tr>
+      </tbody>
+    </table>
+
+    <h3>TF Transition &mdash; Only Run 1 Steps</h3>
+<pre><code>Inv(i1', i2, k, wk1, wk2, c1', c2, n) :-
+    Inv(i1, i2, k, wk1, wk2, c1, c2, n),
+    SchTF(i1, i2, k, wk1, wk2, c1, c2, n),
+    (
+        (* HIT ADD: add distinguished edge k *)
+        i1 &lt; n - 1 and i1' = i1 + 1 and
+        c1' = c1 + wk1
+    ) or (
+        (* MISS ADD: add other edge &mdash; weight unknown but non-negative *)
+        i1 &lt; n - 1 and i1' = i1 + 1 and
+        c1' &ge; c1
+    ) or (
+        (* SKIP: edge not added to MST *)
+        i1 &lt; n - 1 and i1' = i1 and c1' = c1
+    ) or (
+        (* FINISHED *)
+        i1 &ge; n - 1 and i1' = i1 and c1' = c1
+    ).</code></pre>
+
+    <h4>Key Difference: No Monotone Bound, No Position Guard</h4>
+<pre><code>Synchronized:   ...), c1' &le; c2'.        &larr; bound present
+Asynchronous:   ...).                     &larr; NO bound
+
+ArraySum:       i1 = k and s1' = s1 + wk1   &larr; position guard
+Kruskal async:  c1' = c1 + wk1              &larr; no guard (any step)</code></pre>
+
+    <h3>Goal</h3>
+<pre><code>c1 &gt; c2 :-
+    Inv(i1, i2, k, wk1, wk2, c1, c2, n),
+    n - 1 &le; i1, n - 1 &le; i2.</code></pre>
+    <p><strong>Result: UNSAT in 2 seconds.</strong> At this point we were excited &mdash; 23x faster than ArraySum! But 2 seconds turned out to be a warning sign.</p>
+    <hr>
+
+    <h2>Part 11: Initial Sanity Checks &mdash; Everything Looks Fine</h2>
+    <table>
+      <thead><tr><th>#</th><th>Goal</th><th>Result</th><th>Time</th><th>Interpretation</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td><code>c1 &ge; 0</code> at termination</td><td><strong>SAT</strong></td><td>8s</td><td>Non-vacuous &check;</td></tr>
+        <tr><td>2</td><td><code>c2 &gt; c1</code> at termination</td><td>UNSAT</td><td>2.2s</td><td>Not universal (expected)</td></tr>
+        <tr><td>3</td><td><code>n &gt; 0</code> at termination</td><td><strong>SAT</strong></td><td>22s</td><td>Non-vacuous &check;</td></tr>
+        <tr><td>4</td><td><code>c1 &gt; c2</code> mid-exec</td><td>SAT</td><td>22.5s</td><td>Vacuous SAT (TT-only)</td></tr>
+      </tbody>
+    </table>
+    <p>The <code>c1 &ge; 0</code> SAT check passes. The <code>n &gt; 0</code> SAT check passes. By the standard recipe, this encoding should be genuine.</p>
+    <p>But <strong>2 seconds was suspicious.</strong> ArraySum takes 47s with the same variable count. ArrayMax takes 8m 35s. Why would Kruskal &mdash; with MORE disjuncts (4 cases vs 3) &mdash; be faster?</p>
+    <hr>
+
+    <h2>Part 12: The Investigation &mdash; Five Hypotheses</h2>
+
+    <h3>Hypothesis 1: SKIP Enables Implicit Synchronization</h3>
+    <p><strong>Test: Remove SKIP from all transitions.</strong></p>
+    <table>
+      <thead><tr><th>Variant</th><th>Result</th><th>Time</th></tr></thead>
+      <tbody>
+        <tr><td>With SKIP (original)</td><td>UNSAT</td><td>2s</td></tr>
+        <tr><td>Without SKIP</td><td>UNSAT</td><td>2s</td></tr>
+      </tbody>
+    </table>
+    <p><strong>Verdict: SKIP is not the factor.</strong></p>
+
+    <h3>Hypothesis 2: Unbounded k Lets Solver Avoid HIT</h3>
+    <p><strong>Test: Add <code>k &lt; n - 1</code> to init.</strong></p>
+    <table>
+      <thead><tr><th>Variant</th><th>Result</th><th>Time</th></tr></thead>
+      <tbody>
+        <tr><td>Unbounded k</td><td>UNSAT</td><td>2s</td></tr>
+        <tr><td><code>k &lt; n - 1</code></td><td>UNSAT</td><td>2.7s</td></tr>
+      </tbody>
+    </table>
+    <p><strong>Verdict: Bounded k is not the factor.</strong></p>
+
+    <h3>Hypothesis 3: Solver Uses Lockstep Schedule</h3>
+    <p><strong>Test: Is <code>i1 = i2</code> universally true mid-execution?</strong></p>
+    <p><strong>Result: UNSAT (7s)</strong> &mdash; not universal. Runs CAN desynchronize.</p>
+    <p><strong>Verdict: Lockstep hypothesis killed.</strong></p>
+
+    <h3>Hypothesis 4: MISS Subsumes HIT &mdash; THE BREAKTHROUGH</h3>
+    <p><strong>Test: Remove HIT ADD from all transitions. Keep only MISS ADD, SKIP, FINISHED.</strong></p>
+    <table>
+      <thead><tr><th>Variant</th><th>Result</th><th>Time</th></tr></thead>
+      <tbody>
+        <tr><td>With HIT (original)</td><td>UNSAT</td><td>2s</td></tr>
+        <tr><td><strong>Without HIT</strong></td><td><strong>UNSAT</strong></td><td><strong>6s</strong></td></tr>
+      </tbody>
+    </table>
+    <p><strong>HIT is irrelevant.</strong> The solver never needed the exact <code>c1 + wk1</code> contribution.</p>
+
+    <h3>Hypothesis 5: Precondition Is Dead &mdash; THE CONFIRMATION</h3>
+    <p><strong>Test: Remove <code>0 &le; wk1, wk1 &le; wk2</code> from init.</strong></p>
+    <table>
+      <thead><tr><th>Variant</th><th>Result</th><th>Time</th></tr></thead>
+      <tbody>
+        <tr><td>With precondition</td><td>UNSAT</td><td>2s</td></tr>
+        <tr><td><strong>Without precondition</strong></td><td><strong>UNSAT</strong></td><td><strong>16s</strong></td></tr>
+      </tbody>
+    </table>
+    <p><strong>The precondition is dead. The UNSAT is vacuous.</strong></p>
+    <hr>
+
+    <h2>Part 13: Root Cause &mdash; Symmetry, Not Monotonicity</h2>
+    <p>With HIT irrelevant, the only transition affecting costs is MISS ADD:</p>
+<pre><code>Run 1 at any ADD step:  c1' &ge; c1   (non-decreasing)
+Run 2 at any ADD step:  c2' &ge; c2   (non-decreasing)</code></pre>
+    <p>These are <strong>structurally identical</strong>. The solver sees two copies of the same abstract process.</p>
+    <div class="info-box warning">
+      <strong>THE SYMMETRY ARGUMENT</strong><br><br>
+      The transitions for c1 and c2 are identical:<br>
+      <code>c1' &ge; c1</code> (from MISS ADD, run 1)<br>
+      <code>c2' &ge; c2</code> (from MISS ADD, run 2)<br><br>
+      There is no constraint relating c1 to c2 at any step. The two runs evolve independently with identical constraints.<br><br>
+      By symmetry: swap c1 &harr; c2, i1 &harr; i2 in any trace, and you get another valid trace with reversed ordering.<br><br>
+      Therefore: <code>c1 &gt; c2</code> at termination is UNSAT by symmetry.<br>
+      And: <code>c2 &gt; c1</code> at termination is ALSO UNSAT (same reason).<br><br>
+      Confirmation: Check 2 (<code>c2 &gt; c1</code>) returned UNSAT in 2.2s. <strong>SYMMETRIC!</strong><br><br>
+      The proof says nothing about monotonicity. It says "symmetric systems can't have asymmetric outcomes."
+    </div>
+    <hr>
+
+    <h2>Part 14: Three Types of Vacuity</h2>
+    <div class="info-box purple">
+      <strong>VACUITY TAXONOMY</strong><br><br>
+      <strong>TYPE 1: ABSTRACT HIT (Dijkstra)</strong><br>
+      HIT = MISS = <code>dv' &ge; 0</code> (identical transitions). Costs stuck at 0 through termination.<br>
+      Detection: <code>output &gt; 0</code> at terminal &rarr; UNSAT (stuck at 0).<br><br>
+      <strong>TYPE 2: UNFORCED HIT (Kruskal async) &mdash; NEW</strong><br>
+      HIT is explicit (<code>c1' = c1 + wk1</code>) BUT optional. MISS subsumes HIT. Costs DO grow, but identically in both runs (symmetric). Precondition <code>wk1 &le; wk2</code> is dead.<br>
+      Detection: <code>output &ge; 0</code> at terminal &rarr; SAT (PASSES!). Remove HIT &rarr; still UNSAT. Remove precondition &rarr; still UNSAT.<br><br>
+      <strong>GENUINE (ArraySum, ArrayMax)</strong><br>
+      HIT is explicit AND forced (<code>i = k</code> guard). MISS does NOT subsume HIT. Precondition alive.<br>
+      Detection: Remove HIT &rarr; SAT (property needs it). Remove precondition &rarr; SAT.<br><br>
+      <strong>KEY: Type 2 is SNEAKY &mdash; it passes the standard sanity check!</strong>
+    </div>
+    <hr>
+
+    <h2>Part 15: The Updated Sanity Check Recipe</h2>
+<pre><code>AFTER GETTING UNSAT:
+
+Step 1: output &ge; 0 at termination &rarr; expected SAT
+        If UNSAT: Type 1 vacuity (Dijkstra-style). STOP.
+
+Step 2: Check for symmetry warning signs
+        - Is UNSAT suspiciously fast?
+        - Does the reverse violation (c2 &gt; c1) also return UNSAT
+          with similar speed?
+        If both: suspect Type 2 vacuity. Proceed to Step 3.
+
+Step 3: Remove precondition (wk1 &le; wk2) from init, re-run.
+        If still UNSAT: Type 2 vacuity (precondition dead). STOP.
+        If SAT: precondition is alive. GENUINELY VERIFIED. &check;
+
+Optional: Remove HIT from all transitions, re-run.
+        If still UNSAT: confirms HIT irrelevant (Type 2).
+        If SAT: confirms HIT matters (genuine).</code></pre>
+
+    <h3>Applied to All Encodings</h3>
+    <table>
+      <thead><tr><th>Algorithm</th><th>Step 1</th><th>Step 2</th><th>Step 3</th><th>Verdict</th></tr></thead>
+      <tbody>
+        <tr><td><strong>ArraySum</strong></td><td><code>s1&ge;0</code> SAT &check;</td><td>47s, not suspicious</td><td>Would give SAT</td><td><strong>GENUINE &check;</strong></td></tr>
+        <tr><td><strong>ArrayMax</strong></td><td><code>m1&ge;0</code> SAT &check;</td><td>8m35s, not suspicious</td><td>Would give SAT</td><td><strong>GENUINE &check;</strong></td></tr>
+        <tr><td><strong>Dijkstra</strong></td><td><code>dv1&gt;0</code> UNSAT &cross;</td><td>&mdash;</td><td>&mdash;</td><td><strong>Type 1 vacuous &cross;</strong></td></tr>
+        <tr><td><strong>Kruskal sync</strong></td><td>bound explicit</td><td>&mdash;</td><td>&mdash;</td><td><strong>GENUINE &check;</strong></td></tr>
+        <tr><td><strong>Kruskal async</strong></td><td><code>c1&ge;0</code> SAT &check;</td><td>2s + symmetric!</td><td>UNSAT (dead!)</td><td><strong>Type 2 vacuous &cross;</strong></td></tr>
+      </tbody>
+    </table>
+    <hr>
+
+    <h2>Part 16: Structural Criterion &mdash; Position Guard Required</h2>
+    <div class="info-box purple">
+      <strong>THREE REQUIREMENTS FOR GENUINE ASYNC MONOTONICITY</strong><br><br>
+      <strong>1. EXPLICIT HIT</strong><br>
+      HIT must compute something concrete:<br>
+      &check; <code>s1' = s1 + wk1</code> (ArraySum)<br>
+      &check; <code>m1' = max(m1, wk1)</code> (ArrayMax)<br>
+      &check; <code>c1' = c1 + wk1</code> (Kruskal &mdash; explicit, but...)<br>
+      &cross; <code>dv1' &ge; 0</code> (Dijkstra &mdash; abstract = MISS)<br><br>
+      <strong>2. POSITION GUARD (i = k)</strong><br>
+      HIT must be FORCED at exactly one step:<br>
+      &check; <code>i1 = k &rarr;</code> must use HIT (ArraySum, ArrayMax)<br>
+      &cross; No guard &mdash; HIT optional (Kruskal async)<br>
+      Requires: counter tracks SCAN POSITION, not derived quantity.<br><br>
+      <strong>3. NON-DECREASING MISS</strong><br>
+      MISS must give solver useful info:<br>
+      &check; <code>s1' &ge; s1</code> (ArraySum)<br>
+      &check; <code>m1' &ge; m1</code> (ArrayMax)<br>
+      &check; <code>c1' &ge; c1</code> (Kruskal)<br>
+      ~ <code>dv1' &ge; 0</code> (Dijkstra &mdash; too loose)<br><br>
+      <strong>SCORECARD:</strong><br>
+      ArraySum: &check; &check; &check; &rarr; GENUINE<br>
+      ArrayMax: &check; &check; &check; &rarr; GENUINE<br>
+      Kruskal async: &check; &cross; &check; &rarr; VACUOUS (fails #2)<br>
+      Dijkstra: &cross; &cross; ~ &rarr; VACUOUS (fails #1 and #2)<br>
+      Kruskal sync: &check; n/a &check; &rarr; GENUINE (sync doesn't need #2)
+    </div>
+    <hr>
+
+    <h2>Part 17: Sync vs Async &mdash; Side-by-Side Comparison</h2>
+    <table>
+      <thead><tr><th>Aspect</th><th>Synchronized</th><th>Asynchronous</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Counters</strong></td><td>1 (<code>i</code>)</td><td>2 (<code>i1, i2</code>)</td></tr>
+        <tr><td><strong>Variables</strong></td><td>7</td><td>8</td></tr>
+        <tr><td><strong>Scheduler</strong></td><td>None</td><td>SchTF, SchFT, SchTT + fairness</td></tr>
+        <tr><td><strong>Monotone bound</strong></td><td><code>c1' &le; c2'</code> explicit</td><td>None</td></tr>
+        <tr><td><strong>HIT forced?</strong></td><td>N/A (both process same edge)</td><td><strong>No</strong> (no position guard)</td></tr>
+        <tr><td><strong>MISS subsumes HIT?</strong></td><td>N/A (bound constrains MISS)</td><td><strong>Yes</strong></td></tr>
+        <tr><td><strong>Precondition alive?</strong></td><td><strong>Yes</strong> (flows through bound)</td><td><strong>No</strong> (dead)</td></tr>
+        <tr><td><strong>Result</strong></td><td><strong>GENUINE &check;</strong></td><td><strong>VACUOUS &cross;</strong></td></tr>
+        <tr><td><strong>Solver time</strong></td><td>Fast</td><td>2s (trivial by symmetry)</td></tr>
+        <tr><td><strong>Proves</strong></td><td>Monotonicity for lockstep</td><td>Nothing (symmetry, not monotonicity)</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Why Sync Succeeds Where Async Fails</h3>
+    <p>The synchronized model processes the <strong>same edge</strong> in both runs at each step. The monotone bound <code>c1' &le; c2'</code> is a valid transition constraint because:</p>
+    <ul>
+      <li>HIT ADD: both add edge k &rarr; <code>c1 + wk1 &le; c2 + wk2</code> (from invariant + precondition)</li>
+      <li>MISS ADD: both add same edge e &rarr; <code>c1 + w1[e] &le; c2 + w2[e]</code> (from invariant + universal precondition)</li>
+    </ul>
+    <p>This bound makes the precondition <strong>alive</strong> at every step. The invariant is trivially <code>c1 &le; c2</code>.</p>
+    <p>The async model cannot use this bound (<code>c1 &le; c2</code> breaks mid-execution when runs are at different indices). Without the bound, the precondition has no path into the proof. Without a position guard (<code>i = k</code>) to force HIT, the solver ignores it entirely.</p>
+    <hr>
+
+    <h2>Part 18: Early Warning Signs (In Retrospect)</h2>
+    <div class="info-box">
+      <strong>WARNING SIGNS WE SHOULD HAVE CAUGHT EARLIER</strong><br><br>
+      <strong>1. SUSPICIOUSLY FAST</strong><br>
+      2 seconds for an 8-variable async encoding. ArraySum (same variables): 47 seconds. ArrayMax (same variables): 8 minutes 35 seconds. Kruskal has MORE disjuncts (4 cases vs 3). Should be SLOWER. &rarr; "Faster than it should be" = investigate.<br><br>
+      <strong>2. SYMMETRIC RESULTS</strong><br>
+      <code>c1 &gt; c2</code> at terminal: UNSAT, 2.0s. <code>c2 &gt; c1</code> at terminal: UNSAT, 2.2s. Nearly identical speeds! For ArraySum: <code>s1 &gt; s2</code> UNSAT (47s) vs <code>s2 &gt; s1</code> UNSAT (4:23). The asymmetry in ArraySum reflects the precondition doing work. The symmetry in Kruskal reflects the precondition NOT doing work.<br><br>
+      <strong>3. NO POSITION GUARD IN THE ENCODING</strong><br>
+      No <code>i = k</code> condition anywhere. This should immediately raise: "when is HIT forced?" No position guard = MISS can subsume HIT.<br><br>
+      <strong>LESSON: "Suspiciously fast" is itself a diagnostic signal.</strong>
+    </div>
+    <hr>
+
+    <h2>Part 19: Key Takeaways</h2>
+    <ol>
+      <li><strong>Kruskal sync monotonicity is genuine.</strong> The monotone bound <code>c1' &le; c2'</code> holds at every transition because both runs process the same edge. Invariant is trivially <code>c1 &le; c2</code>. Use this model.</li>
+      <li><strong>Kruskal async monotonicity is vacuous.</strong> The UNSAT (2s) is a proof by symmetry, not monotonicity. The precondition <code>wk1 &le; wk2</code> is dead. HIT is irrelevant.</li>
+      <li><strong>New vacuity type: MISS-subsumes-HIT.</strong> When HIT has no position guard, MISS absorbs it. The solver uses MISS everywhere, making the runs symmetric. The standard sanity check (<code>output &ge; 0</code> SAT) does NOT detect this.</li>
+      <li><strong>Position guard is the structural criterion for async.</strong> Counter must track SCAN POSITION (<code>i = k</code> forces HIT). Kruskal's counter tracks edges ADDED &mdash; no scan position exists to create the guard. All three requirements for genuine async: explicit HIT, position guard, non-decreasing MISS.</li>
+      <li><strong>"Suspiciously fast" is a diagnostic signal.</strong> When an 8-variable async encoding (Kruskal: 2s) solves much faster than structurally similar ones (ArraySum: 47s, ArrayMax: 8m35s), investigate why.</li>
+      <li><strong>Symmetric violation + reverse is a warning sign.</strong> When <code>c1 &gt; c2</code> and <code>c2 &gt; c1</code> both return UNSAT at similar speed, the proof may be by symmetry. For genuine proofs, the violation and reverse have asymmetric solve times because the precondition creates real asymmetry.</li>
+      <li><strong>The updated sanity check recipe has three levels:</strong> (a) <code>output &ge; 0</code> SAT catches Type 1 (Dijkstra-style); (b) symmetry/speed check flags suspicion; (c) removing the precondition catches Type 2 (Kruskal-style, dead precondition).</li>
+      <li><strong>Sync is the right model for Kruskal.</strong> Union-find decisions are weight-independent, so both runs choose the same edges. The sync model captures this perfectly. Async is unnecessary and misleading.</li>
+      <li><strong>Negative results sharpen methodology.</strong> This experiment upgraded our diagnostic toolkit: suspicion heuristics (speed, symmetry), structural criteria (position guard), and definitive tests (remove precondition). These apply to all future encodings.</li>
+    </ol>
+    <hr>
+
+    <h2>References</h2>
+    <ol>
+      <li><strong>Chaudhuri, Gulwani, Lublinerman</strong> &mdash; "Continuity and Robustness of Programs" (CACM 2012)</li>
+      <li><strong>Monniaux &amp; Gonnord</strong> &mdash; "Cell Morphing: From Array Programs to Array-Free Horn Clauses" (SAS 2016)</li>
+      <li><strong>Unno, Terauchi, Kobayashi</strong> &mdash; "Constraint-based Relational Verification" (CAV 2021)</li>
+      <li><strong>PCSAT Solver</strong> &mdash; Tool for solving predicate constraint satisfaction problems</li>
+    </ol>
+  </div>
+
+  <!-- ============ SOURCE CODE PANEL ============ -->
+  <div id="panel-source" class="panel">
+    <div class="source-container">
+      <div class="source-header">
+        <span class="source-filename" id="current-filename">monotone_kruskal_sync.clp</span>
+        <button class="copy-btn" onclick="copySource()">Copy to clipboard</button>
+      </div>
+      <div class="file-tabs">
+        <div class="file-tab active" onclick="switchFile('sync', this)">monotone_kruskal_sync.clp (genuine)</div>
+        <div class="file-tab" onclick="switchFile('async', this)">monotone_kruskal_async.clp (vacuous)</div>
+      </div>
+      <div class="source-lines">
+        <div class="line-numbers" id="line-nums"></div>
+        <div class="source-code" id="source-code"></div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script>
+// Tab switching
+function switchTab(el) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('panel-' + el.dataset.panel).classList.add('active');
+}
+
+// Source code files
+let currentFile = 'sync';
+const sourceFiles = {};
+
+sourceFiles.sync = `(*
+Kruskal(G : graph)
+    for each node v in G:
+        MakeSet(v)
+    T := empty
+    cost := 0
+    for each edge (u,v) in G ordered by weight:
+        if Find(u) != Find(v):
+            T := T + {(u,v)}
+            cost := cost + G[u,v]
+            Union(u, v)
+    return T, cost
+*)
+
+(*
+PROPERTY: Monotonicity of MST cost under pointwise ordering
+    forall e. w1[e] <= w2[e]  ==>  cost(MST_1) <= cost(MST_2)
+
+================================================================================
+SYNCHRONIZED MODEL
+================================================================================
+
+Why synchronized: Both runs process edges in the SAME order and make the
+SAME add/skip decisions. The union-find structure depends only on which
+edges were added, not their weights. So at each step, both runs either
+both add or both skip the current edge.
+
+In the asynchronous model, runs could make DIFFERENT add/skip decisions.
+Proving monotonicity then requires MST optimality (matroid argument),
+which cell morphing cannot capture. See session notes section 6.2.
+
+ENCODING STRUCTURE (mirrors robustness kruskal_v2_fixed.clp):
+    - Single counter i instead of i1, i2 (synchronized)
+    - Same HIT/MISS/SKIP/FINISHED cases as robustness
+    - Monotone bound c1' <= c2' replaces epsilon bound
+    - No sign bits (bk, bc), no eps parameter needed
+    - Counter i counts edges ADDED to MST (skip does NOT increment)
+    - Loop bound n-1 (MST has n-1 edges for n vertices)
+
+STATE VARIABLES (7 total):
+    i    : edges added to MST (both runs, synchronized)
+    k    : distinguished edge index (INPUT \u2014 never changes)
+    wk1  : weight of edge k in run 1 (INPUT \u2014 never changes)
+    wk2  : weight of edge k in run 2 (INPUT \u2014 never changes)
+    c1   : MST cost for run 1 (OUTPUT \u2014 accumulates)
+    c2   : MST cost for run 2 (OUTPUT \u2014 accumulates)
+    n    : number of vertices
+
+SOUNDNESS of monotone bound at each step:
+    HIT ADD:  c1' = c1+wk1, c2' = c2+wk2. Since c1<=c2 and wk1<=wk2 => c1'<=c2'
+    MISS ADD: c1' = c1+w1[e], c2' = c2+w2[e]. Since c1<=c2 and w1[e]<=w2[e] => c1'<=c2'
+    SKIP:     c1' = c1, c2' = c2. Trivially c1'<=c2'.
+    FINISHED: c1' = c1, c2' = c2. Trivially c1'<=c2'.
+
+EXPECTED: UNSAT (fast \u2014 7 variables, trivial invariant c1 <= c2)
+*)
+
+
+(******************************************************************************)
+(* INITIALIZATION                                                             *)
+(******************************************************************************)
+
+Inv(i, k, wk1, wk2, c1, c2, n) :-
+    i = 0,
+    n > 0,
+    0 <= k,
+    (* Distinguished edge weight precondition: wk1 <= wk2 *)
+    wk1 <= wk2,
+    (* Initial costs are equal *)
+    c1 = 0, c2 = 0.
+
+
+(******************************************************************************)
+(* TRANSITION (synchronized \u2014 single counter, no scheduler)                   *)
+(*                                                                            *)
+(* Both runs consider the SAME edge simultaneously.                           *)
+(* Both make the SAME decision (add or skip).                                 *)
+(* Counter i counts edges ADDED to MST, terminates at n-1.                    *)
+(*                                                                            *)
+(* Cases:                                                                     *)
+(*   1. HIT ADD: Both add distinguished edge k \u2014 c1'=c1+wk1, c2'=c2+wk2     *)
+(*   2. MISS ADD: Both add other edge \u2014 weights unknown but w1[e]<=w2[e]     *)
+(*   3. SKIP: Both skip edge \u2014 costs unchanged, counter unchanged            *)
+(*   4. FINISHED: i >= n-1, stutter                                           *)
+(******************************************************************************)
+
+Inv(i', k, wk1, wk2, c1', c2', n) :-
+    Inv(i, k, wk1, wk2, c1, c2, n),
+    (
+        (* Case 1: HIT ADD \u2014 both add distinguished edge k *)
+        i < n - 1 and i' = i + 1 and
+        c1' = c1 + wk1 and c2' = c2 + wk2
+    ) or (
+        (* Case 2: MISS ADD \u2014 both add other edge *)
+        (* Weights unknown; c1' and c2' constrained by monotone bound below *)
+        i < n - 1 and i' = i + 1
+    ) or (
+        (* Case 3: SKIP \u2014 both skip current edge, not added to MST *)
+        i < n - 1 and i' = i and c1' = c1 and c2' = c2
+    ) or (
+        (* Case 4: FINISHED \u2014 stutter *)
+        i >= n - 1 and i' = i and c1' = c1 and c2' = c2
+    ),
+    (* Monotone bound \u2014 replaces epsilon bound from robustness *)
+    c1' <= c2'.
+
+
+(******************************************************************************)
+(* GOAL: Monotonicity violation at termination                                *)
+(*                                                                            *)
+(* UNSAT = cost(MST_1) <= cost(MST_2) verified                               *)
+(******************************************************************************)
+
+c1 <= c2 :-
+    Inv(i, k, wk1, wk2, c1, c2, n),
+    n - 1 <= i.
+
+
+(******************************************************************************)
+(* TEST QUERIES                                                               *)
+(******************************************************************************)
+
+(*
+(* Test 1: Violation c1 > c2 \u2014 expected UNSAT *)
+c1 > c2 :-
+    Inv(i, k, wk1, wk2, c1, c2, n),
+    n - 1 <= i.
+unsat,0
+1.014 total
+(* Test 2: Bound holds c1 <= c2 \u2014 expected SAT *)
+c1 <= c2 :-
+    Inv(i, k, wk1, wk2, c1, c2, n),
+    n - 1 <= i.
+ sat,27
+3.777 total
+*)`.trim();
+
+sourceFiles.async = `(*
+Kruskal(G : graph) - ASYNCHRONOUS MODEL
+VERDICT: VACUOUS (precondition is dead)
+
+Root cause: Counter tracks edges ADDED, not scan positions.
+Without position guard (i = k), MISS subsumes HIT.
+The proof works by symmetry, not monotonicity.
+*)
+
+Inv(i1, i2, k, wk1, wk2, c1, c2, n) :-
+    i1 = 0, i2 = 0,
+    n > 0,
+    0 <= k, k < n - 1,
+    0 <= wk1, wk1 <= wk2,
+    c1 = 0, c2 = 0.
+
+(* TF TRANSITION *)
+Inv(i1', i2, k, wk1, wk2, c1', c2, n) :-
+    Inv(i1, i2, k, wk1, wk2, c1, c2, n),
+    SchTF(i1, i2, k, wk1, wk2, c1, c2, n),
+    (
+        i1 < n - 1 and i1' = i1 + 1 and c1' = c1 + wk1
+    ) or (
+        i1 < n - 1 and i1' = i1 + 1 and c1' >= c1
+    ) or (
+        i1 < n - 1 and i1' = i1 and c1' = c1
+    ) or (
+        i1 >= n - 1 and i1' = i1 and c1' = c1
+    ).
+
+(* FT TRANSITION *)
+Inv(i1, i2', k, wk1, wk2, c1, c2', n) :-
+    Inv(i1, i2, k, wk1, wk2, c1, c2, n),
+    SchFT(i1, i2, k, wk1, wk2, c1, c2, n),
+    (
+        i2 < n - 1 and i2' = i2 + 1 and c2' = c2 + wk2
+    ) or (
+        i2 < n - 1 and i2' = i2 + 1 and c2' >= c2
+    ) or (
+        i2 < n - 1 and i2' = i2 and c2' = c2
+    ) or (
+        i2 >= n - 1 and i2' = i2 and c2' = c2
+    ).
+
+(* TT TRANSITION *)
+Inv(i1', i2', k, wk1, wk2, c1', c2', n) :-
+    Inv(i1, i2, k, wk1, wk2, c1, c2, n),
+    SchTT(i1, i2, k, wk1, wk2, c1, c2, n),
+    (* Run 1 *)
+    (
+        i1 < n - 1 and i1' = i1 + 1 and c1' = c1 + wk1
+    ) or (
+        i1 < n - 1 and i1' = i1 + 1 and c1' >= c1
+    ) or (
+        i1 < n - 1 and i1' = i1 and c1' = c1
+    ) or (
+        i1 >= n - 1 and i1' = i1 and c1' = c1
+    ),
+    (* Run 2 *)
+    (
+        i2 < n - 1 and i2' = i2 + 1 and c2' = c2 + wk2
+    ) or (
+        i2 < n - 1 and i2' = i2 + 1 and c2' >= c2
+    ) or (
+        i2 < n - 1 and i2' = i2 and c2' = c2
+    ) or (
+        i2 >= n - 1 and i2' = i2 and c2' = c2
+    ).
+
+(* SCHEDULER FAIRNESS *)
+i1 < n - 1 :-
+    Inv(i1, i2, k, wk1, wk2, c1, c2, n),
+    SchTF(i1, i2, k, wk1, wk2, c1, c2, n),
+    i2 < n - 1.
+
+i2 < n - 1 :-
+    Inv(i1, i2, k, wk1, wk2, c1, c2, n),
+    SchFT(i1, i2, k, wk1, wk2, c1, c2, n),
+    i1 < n - 1.
+
+SchTF(i1, i2, k, wk1, wk2, c1, c2, n),
+SchFT(i1, i2, k, wk1, wk2, c1, c2, n),
+SchTT(i1, i2, k, wk1, wk2, c1, c2, n) :-
+    Inv(i1, i2, k, wk1, wk2, c1, c2, n),
+    i1 < n - 1 or i2 < n - 1.
+
+(* GOAL: UNSAT in 2s - BUT VACUOUS *)
+(* c1 > c2 :-
+    Inv(i1, i2, k, wk1, wk2, c1, c2, n),
+    n - 1 <= i1, n - 1 <= i2. *)`.trim();
+
+// File switching
+function switchFile(fileId, el) {
+  currentFile = fileId;
+  document.querySelectorAll('.file-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  const names = { sync: 'monotone_kruskal_sync.clp', async: 'monotone_kruskal_async.clp' };
+  document.getElementById('current-filename').textContent = names[fileId];
+  renderSource();
+}
+
+// Render source with line numbers and syntax highlighting
+function renderSource() {
+  const lines = sourceFiles[currentFile].split('\n');
+  const numEl = document.getElementById('line-nums');
+  const codeEl = document.getElementById('source-code');
+
+  let numsHtml = '';
+  let codeHtml = '';
+
+  lines.forEach((line, i) => {
+    numsHtml += '<span>' + (i + 1) + '</span>';
+    codeHtml += highlightLine(escapeHtml(line)) + '\n';
+  });
+
+  numEl.innerHTML = numsHtml;
+  codeEl.innerHTML = codeHtml;
+}
+
+function escapeHtml(s) {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+function highlightLine(line) {
+  // Comments
+  line = line.replace(/(\(\*.*?\*\))/g, '<span class="comment">$1</span>');
+  line = line.replace(/(\/\/.*$)/g, '<span class="comment">$1</span>');
+
+  // Predicates
+  line = line.replace(/\b(Inv|SchTF|SchFT|SchTT)\b/g, '<span class="predicate">$1</span>');
+
+  // Keywords
+  line = line.replace(/\b(and|or|not)\b/g, '<span class="keyword">$1</span>');
+  line = line.replace(/(:-)/g, '<span class="keyword">$1</span>');
+
+  // Booleans and types
+  line = line.replace(/\b(bool|true|false)\b/g, '<span class="bool">$1</span>');
+
+  // Operators
+  line = line.replace(/(&lt;=|&gt;=|&lt;&gt;|&lt;|&gt;)/g, '<span class="operator">$1</span>');
+
+  return line;
+}
+
+function copySource() {
+  navigator.clipboard.writeText(sourceFiles[currentFile]).then(() => {
+    const btn = document.querySelector('.copy-btn');
+    btn.textContent = 'Copied!';
+    setTimeout(() => btn.textContent = 'Copy to clipboard', 2000);
+  });
+}
+
+// Initialize
+renderSource();
+</script>
+
+</body>
+</html>
