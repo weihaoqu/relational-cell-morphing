@@ -166,7 +166,7 @@
   </div>
   <div class="header-content">
     <div class="header-title">ArraySum Commutativity (Swap Invariance)</div>
-    <div class="header-sub">Relational Cell Morphing with PCSAT &mdash; Verified (UNSAT)</div>
+    <div class="header-sub">Relational Cell Morphing with PCSAT &mdash; Verified (UNSAT, 8h 30m)</div>
     <div class="tabs">
       <div class="tab active" data-panel="simple" onclick="switchTab(this)">
         <span class="tab-icon">&#128196;</span>Overview
@@ -188,7 +188,7 @@
     <p>Verifying that array summation is invariant under element swaps &mdash; a novel encoding pattern using two distinguished cells.</p>
 
     <div class="info-box success">
-      <strong>Result: UNSAT &mdash; Commutativity Verified.</strong> Swapping any two elements does not change the sum. 8 variables, 3 clauses (init + transition + goal).
+      <strong>Result: UNSAT (8h 30m) &mdash; Commutativity Verified.</strong> Swapping any two elements does not change the sum. 8 variables, 3 clauses (init + transition + goal).
     </div>
     <hr>
 
@@ -231,7 +231,7 @@ Therefore: s1 = s2 at termination.</code></pre>
     <h2>Verification Results</h2>
     <table>
       <tr><th>Goal</th><th>Result</th><th>Meaning</th></tr>
-      <tr><td><code>s1 &gt; s2 or s2 &gt; s1</code></td><td><strong>UNSAT</strong></td><td>Commutativity holds for all arrays and all swap positions</td></tr>
+      <tr><td><code>s1 &gt; s2 or s2 &gt; s1</code></td><td><strong>UNSAT (8h 30m)</strong></td><td>Commutativity holds for all arrays and all swap positions</td></tr>
     </table>
   </div>
 
@@ -333,7 +333,7 @@ Therefore: s1 = s2 at termination.</code></pre>
     </ol>
 
     <div class="info-box success">
-      <strong>Result: UNSAT &mdash; Verified.</strong> ArraySum is invariant under swapping any two elements. 8 variables, 3 clauses.
+      <strong>Result: UNSAT (8h 30m) &mdash; Verified.</strong> ArraySum is invariant under swapping any two elements. 8 variables, 3 clauses.
     </div>
   </div>
 
