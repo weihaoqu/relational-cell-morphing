@@ -232,7 +232,7 @@
 <!-- ═══════════════════ STATS ═══════════════════ -->
 <div class="stats">
   <div class="stat"><span class="stat-num">14</span><span class="stat-label">Encodings</span></div>
-  <div class="stat"><span class="stat-num">11</span><span class="stat-label">Verified</span></div>
+  <div class="stat"><span class="stat-num">12</span><span class="stat-label">Verified</span></div>
   <div class="stat"><span class="stat-num">6</span><span class="stat-label">Properties</span></div>
   <div class="stat"><span class="stat-num">6</span><span class="stat-label">Algorithms</span></div>
 </div>
@@ -300,7 +300,7 @@
     <div class="prop-card">
       <h4>Commutativity</h4>
       <span class="formula">swap(A, j, k) &rarr; f(A) = f(A')</span>
-      <p>Two distinguished cells, swap precondition, equality postcondition. ArraySum encoding timed out &mdash; non-monotone invariants challenge PCSAT. Open problem.</p>
+      <p>Two distinguished cells, swap precondition, equality postcondition. ArraySum commutativity verified &mdash; PCSAT handles the non-monotone invariant with 8 variables and 3 clauses.</p>
     </div>
   </div>
 </section>
@@ -335,7 +335,7 @@
       <tbody>
         <tr><td>Kruskal MST</td><td><span class="tag tag-green">Monotonicity</span></td><td>Async</td><td>2s</td><td><span class="tag tag-red">Unforced HIT</span></td></tr>
         <tr><td>Dijkstra SP</td><td><span class="tag tag-green">Monotonicity</span></td><td>Async</td><td>14s</td><td><span class="tag tag-red">Abstract HIT</span></td></tr>
-        <tr><td>ArraySum</td><td><span class="tag tag-yellow">Commutativity</span></td><td>Sync</td><td>&mdash;</td><td><span class="tag tag-yellow">Timeout</span></td></tr>
+        <tr><td>ArraySum</td><td><span class="tag tag-yellow">Commutativity</span></td><td>Sync</td><td>s1 = s2</td><td><span class="tag tag-green">UNSAT</span></td></tr>
       </tbody>
     </table>
   </div>
@@ -563,10 +563,10 @@
   <div class="section-heading">Commutativity</div>
   <div class="examples-grid" style="margin-bottom: 32px;">
     <a class="card" href="commutativity/">
-      <div class="card-category commutativity">Commutativity (Open Problem)</div>
+      <div class="card-category commutativity">Commutativity</div>
       <div class="card-title">ArraySum</div>
       <div class="card-desc">Swap invariance with two distinguished cells. Novel "same increment" MISS pattern. Encoding timed out &mdash; non-monotone invariant.</div>
-      <div class="card-tags"><span class="card-tag">Timeout</span><span class="card-tag">2 cells</span><span class="card-tag">Open</span></div>
+      <div class="card-tags"><span class="card-tag">UNSAT</span><span class="card-tag">2 cells</span><span class="card-tag">8 vars</span></div>
     </a>
   </div>
 
