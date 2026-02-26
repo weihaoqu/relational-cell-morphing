@@ -243,6 +243,7 @@
   }
   .info-box.success { border-left-color: var(--accent2); }
   .info-box.purple { border-left-color: var(--accent3); }
+  .info-box.amber { border-left-color: #d97706; }
 
   /* Top navigation */
   .topnav { border-bottom: 1px solid var(--border); font-size: 0.8rem; }
@@ -344,8 +345,14 @@
       <div class="tab active" data-panel="simple" onclick="switchTab(this)">
         <span class="tab-icon">&#128196;</span>Overview
       </div>
-      <div class="tab" data-panel="detailed" onclick="switchTab(this)">
-        <span class="tab-icon">&#128214;</span>Detailed Tutorial
+      <div class="tab" data-panel="extensions" onclick="switchTab(this)">
+        <span class="tab-icon">&#128269;</span>Extension Deep Dives
+      </div>
+      <div class="tab" data-panel="async" onclick="switchTab(this)">
+        <span class="tab-icon">&#9889;</span>Async Frontier
+      </div>
+      <div class="tab" data-panel="summary" onclick="switchTab(this)">
+        <span class="tab-icon">&#128202;</span>Research Summary
       </div>
       <div class="tab" data-panel="source" onclick="switchTab(this)">
         <span class="tab-icon">&#128187;</span>Source Code
@@ -359,6 +366,11 @@
   <div id="panel-simple" class="panel active content">
     <h1>Cost Analysis Extensions with PickK + Prophecy</h1>
     <p>Five extensions of the PickK + prophecy technique to different algorithms, demonstrating its generality beyond the CountPositive baseline.</p>
+
+    <div class="info-box">
+      <strong>PREREQUISITE</strong><br><br>
+      The core PickK + prophecy technique is developed step-by-step in the <a href="../countpositive/">CountPositive staged tutorial</a> (Stages 1 &rarr; 2a &rarr; 2b). This page covers extensions beyond that baseline, plus async analysis and research findings.
+    </div>
     <hr>
 
     <h2>What This Is</h2>
@@ -472,265 +484,190 @@ At termination: "found d &ge; d0 good positions, so cost diff &le; f(n - d0)"</c
     </ol>
   </div>
 
-  <!-- ============ DETAILED TUTORIAL PANEL ============ -->
-  <div id="panel-detailed" class="panel content">
-    <h1>Relational Cost Analysis via PickK + Prophecy in PCSAT</h1>
-    <h3>A plain-language guide to what we built, why it works, and what we learned.</h3>
+  <!-- ============ EXTENSION DEEP DIVES PANEL ============ -->
+  <div id="panel-extensions" class="panel content">
+    <h1>Extension Deep Dives</h1>
+    <p>Detailed walkthroughs of each extension encoding &mdash; transition snippets, key insights, and comparisons with the CountPositive baseline.</p>
     <hr>
 
-    <h2>1. The Big Picture</h2>
-    <p>You have a research framework called <strong>relational cell morphing</strong> that verifies properties about programs running on two related arrays. Previous work proved robustness ("small input change &rarr; small output change") and sensitivity ("one element differs &rarr; bounded output change").</p>
-    <p>Now we're extending this to <strong>relational cost</strong> &mdash; proving that the <em>cost</em> (number of operations, accumulated values, etc.) of running a program on two related arrays differs by at most some bound.</p>
-    <p>The key challenge: cost depends on <strong>many</strong> array elements, not just one. Standard cell morphing tracks a single distinguished cell <code>k</code>. That's enough for robustness (where an epsilon bound absorbs the unknown cells) but not for cost (where each cell's contribution matters).</p>
-    <p><strong>The solution: PickK + prophecy.</strong> Instead of one fixed cell, we dynamically re-focus the spotlight using a functional predicate <code>PickK</code>, and count how many "good" positions we discover using a prophecy variable <code>d0</code>.</p>
-    <hr>
-
-    <h2>2. Technical Architecture</h2>
-
-    <h3>The Three Layers</h3>
-    <p>Think of the encoding as three layers stacked on top of each other:</p>
-
-    <p><strong>Layer 1: Standard Cell Morphing</strong> (from previous work)</p>
-    <ul>
-      <li>Track one distinguished cell <code>(k, ak1, ak2, bk)</code></li>
-      <li>HIT/MISS abstraction: when <code>i = k</code>, values are known; when <code>i &ne; k</code>, values are unknown</li>
-      <li>This is the foundation &mdash; it gives us relational information at one position</li>
-    </ul>
-
-    <p><strong>Layer 2: PickK (Existential Morphing)</strong> &larr; NEW</p>
-    <ul>
-      <li>A functional predicate <code>PickK(state..., kp)</code> that re-chooses which cell to track</li>
-      <li>Two modes: <em>searching</em> (move spotlight to current index) and <em>settled</em> (keep current cell)</li>
-      <li>This lets us gather relational information at MULTIPLE positions across execution</li>
-    </ul>
-
-    <p><strong>Layer 3: Prophecy Counting (d, d0)</strong> &larr; NEW</p>
-    <ul>
-      <li><code>d0</code>: "I promise there exist at least d0 positions where A1[i] = A2[i]"</li>
-      <li><code>d</code>: counter of how many such positions we've actually found so far</li>
-      <li>When <code>d &ge; d0</code>: prophecy fulfilled, stop searching</li>
-      <li>The final bound is parameterized by <code>d0</code></li>
-    </ul>
-
-    <h3>How They Work Together</h3>
-<pre><code>PickK says: "focus on index i right now"
-              &darr;
-Cell morphing says: "at this index, bk=1 means values are equal"
-              &darr;
-Prophecy says: "that's another good position! d' = d + 1"
-              &darr;
-Cost tracking says: "equal values &rarr; same branch &rarr; cost unchanged"
-              &darr;
-At termination: "found d &ge; d0 good positions, so cost diff &le; n - d0"</code></pre>
-
-    <h3>Synchronized vs Asynchronous Model</h3>
-    <p>This was our <strong>biggest discovery</strong> of the session:</p>
+    <h2>How to Read These Extensions</h2>
+    <p>All extensions (and the CountPositive baseline) follow the same template. Only three things change:</p>
     <table>
-      <thead>
-        <tr><th>Model</th><th>What It Means</th><th>Extra Predicates</th><th>Cost Overhead</th></tr>
-      </thead>
-      <tbody>
-        <tr><td>Synchronized</td><td>Single counter <code>i</code>, both runs step together</td><td>Wit (witness)</td><td><strong>Zero</strong></td></tr>
-        <tr><td>Asynchronous</td><td>Two counters <code>i1, i2</code>, scheduler decides who steps</td><td>SchTF, SchFT, SchTT + fairness</td><td><strong>Massive</strong> (3hr &rarr; 2.5s)</td></tr>
-      </tbody>
+      <tr><th>What changes</th><th>Where in encoding</th><th>Examples</th></tr>
+      <tr><td>Cost per step</td><td>HIT-unequal and MISS cases</td><td>&plusmn;1, &plusmn;2, &plusmn;&epsilon;</td></tr>
+      <tr><td>Cell mutation</td><td>HIT-equal and HIT-unequal cases</td><td>copy (read-only) vs f(x) (mutable)</td></tr>
+      <tr><td>Input precondition / bound</td><td>Init clause and goal</td><td>replace only vs replace + L&infin;</td></tr>
     </table>
-    <p>For algorithms with deterministic iteration order (countpositive, arraysum, etc.), <strong>always use synchronized</strong>. The async scheduler adds 6+ Horn clauses that PCSAT must close invariants under, and this is the entire bottleneck.</p>
-    <p>Async is only needed when runs can make different control-flow decisions (e.g., Kruskal's algorithm where one run might add an edge that the other skips).</p>
+    <p>Everything else &mdash; PickK rules, Wit, discovery counter <code>d</code>, prophecy <code>d0</code>, goal guard <code>d &ge; d0</code> &mdash; is identical. The machinery is reusable; only the per-step cost model changes.</p>
     <hr>
 
-    <h2>3. What Each File Does</h2>
+    <h2>1. CountInRange &mdash; Branch Condition Abstraction</h2>
+<pre><code>CountInRange(A, n, lo, hi):
+    cost := 0
+    for i = 0 to n-1:
+        if lo &le; A[i] and A[i] &le; hi:
+            cost++</code></pre>
+    <p><strong>Property:</strong> <code>cost1 &minus; cost2 &le; n &minus; d0</code></p>
 
-    <h3>Encodings (in recommended testing order)</h3>
-    <table>
-      <thead>
-        <tr><th>File</th><th>What</th><th>Vars</th><th>Time</th><th>Teaches</th></tr>
-      </thead>
-      <tbody>
-        <tr><td><code>countpositive_counting.clp</code></td><td>Pure counting, no morphing</td><td>5</td><td>5s</td><td>The property itself is simple</td></tr>
-        <tr><td><code>countpositive_sync.clp</code></td><td>Sync + PickK</td><td>9</td><td><strong>2.5s</strong></td><td>PickK has zero overhead</td></tr>
-        <tr><td><code>countpositive_fixedk.clp</code></td><td>Fixed k, no PickK</td><td>7</td><td>4.5s</td><td>Fixed k can only prove n-1</td></tr>
-        <tr><td><code>arraysum_mixed_sync.clp</code></td><td>Sync + PickK + eps</td><td>10</td><td><strong>25s</strong></td><td>PickK needed for value-dependent bounds</td></tr>
-        <tr><td><code>countpositive.clp</code></td><td>Async + PickK (original)</td><td>11</td><td>~3hr</td><td>Async scheduler is the bottleneck</td></tr>
-      </tbody>
-    </table>
-    <hr>
-
-    <h2>4. Technology Choices and Why</h2>
-
-    <h3>Why PCSAT (not SMT arrays)?</h3>
-    <p>PCSAT solves constrained Horn clauses (CHCs) over integers. By encoding array accesses as HIT/MISS on distinguished cells, we avoid SMT array theories entirely. The trade-off: we lose precision at MISS positions, but gain the ability to use PCSAT's powerful invariant synthesis.</p>
-
-    <h3>Why functional predicates for PickK?</h3>
-    <p>PickK is a functional predicate (maps state &rarr; output) rather than a relation. This is the PCSat/pfwCSP way of expressing existential quantification: "there EXISTS a choice of kp such that the invariant is maintained." PCSAT synthesizes the interpretation of PickK along with the invariant &mdash; it figures out the optimal refocusing strategy automatically.</p>
-
-    <h3>Why prophecy (d0)?</h3>
-    <p>Without d0, you'd need to track exactly which positions are equal &mdash; impossible without array theory. Prophecy sidesteps this: "I don't know WHICH positions are equal, but there are at least d0 of them." The bound <code>n - d0</code> degrades gracefully from <code>n</code> (d0=0, no information) to <code>0</code> (d0=n, identical arrays).</p>
-
-    <h3>Why Wit (witness predicate) in sync model?</h3>
-    <p>When PickK refocuses from cell k to cell kp, we need fresh values <code>(ak1p, ak2p, bkp)</code> for the new cell. In async mode, the scheduler predicates (SchTT etc.) provide these existentially. In sync mode, we use a minimal <code>Wit</code> predicate for the same purpose. Wit has the same signature as Inv minus the mutable state &mdash; PCSAT synthesizes its interpretation.</p>
-    <hr>
-
-    <h2>5. Decision Reasoning</h2>
-
-    <h3>"Why not just add the PickK fallback rule?"</h3>
-    <p>We tried adding a third PickK rule for the case <code>d &lt; d0 &and; i1 &ne; i2</code> (keep cell k when loops are misaligned). This <strong>made things slower</strong>, not faster.</p>
-    <p>The lesson (echoing the Dijkstra Approach A failure): PCSAT must find an invariant that is closed under ALL Horn clauses simultaneously. More clauses = more constraints on the invariant = harder problem. An extra clause that's "sound but unnecessary" gives the solver more work for no benefit.</p>
-    <blockquote><strong>Rule of thumb:</strong> Only add a Horn clause if it carries information the solver needs. If a case is already handled by the solver's freedom to choose any value, don't constrain it.</blockquote>
-
-    <h3>"Why synchronized over asynchronous?"</h3>
-    <p>For deterministic-order loops (<code>for i = 0 to n-1</code>), both runs visit indices in the same order. The async model (i1, i2 with scheduler) allows interleavings that can't actually happen &mdash; and the solver must prove the property for ALL interleavings, which is strictly harder.</p>
-    <p>The sync model (single counter i) is both:</p>
-    <ul>
-      <li><strong>Sound</strong>: both runs really do step together</li>
-      <li><strong>More precise</strong>: no spurious interleavings</li>
-      <li><strong>Dramatically faster</strong>: 6 fewer Horn clauses</li>
-    </ul>
-    <p><strong>When async IS needed:</strong> Kruskal MST (add/skip decisions differ between runs), or any algorithm where data-dependent control flow causes the runs to diverge.</p>
-
-    <h3>"Why is arraysum more interesting than countpositive?"</h3>
-    <p>For countpositive, the cost contribution at each step is &plusmn;1 regardless of values. Pure counting can express "equal &rarr; 0, unequal &rarr; &plusmn;1" without knowing what the values actually are.</p>
-    <p>For arraysum, the cost contribution is <code>a1[i] - a2[i]</code> &mdash; it depends on the actual VALUES. Cell morphing at HIT positions gives <code>|ak1 - ak2| &le; eps</code>, bounding the per-step contribution. Counting has no access to values, so it can't express this. PickK + cell morphing is genuinely necessary.</p>
-    <hr>
-
-    <h2>6. Lessons Learned</h2>
-
-    <h3>Bug: Extra clauses hurt PCSAT (confirmed again!)</h3>
-    <p>We already knew this from Dijkstra Approach A (15+ hours with extra TT clause). The <code>countpositive_opt.clp</code> experiment confirms it: adding one PickK rule made things slower. This is now a <strong>replicated finding</strong> across two completely different encoding families.</p>
-
-    <h3>Insight: PickK is essentially free</h3>
-    <p>Version A (9 vars, PickK) was FASTER than Version B (5 vars, no PickK): 2.5s vs 5s. The functional predicate adds no meaningful overhead to invariant synthesis. The solver handles existential morphing naturally.</p>
-    <p>This was surprising &mdash; we expected PickK to add a quantifier alternation penalty. In practice, PCSAT's treatment of functional predicates is efficient enough that it doesn't show up.</p>
-
-    <h3>Insight: The async scheduler is the ENTIRE bottleneck for cost</h3>
-    <p>Going from async to sync: 3 hours &rarr; 2.5 seconds. That's a ~4000x speedup. The scheduler adds SchTF, SchFT, SchTT (3 unknown predicates) + 2 fairness clauses + 1 disjunction clause = 6 extra Horn constraints. For cost encodings with PickK, this is too much.</p>
-
-    <h3>Insight: Performance scales with CLAUSES, not VARIABLES</h3>
-    <table>
-      <thead>
-        <tr><th>Encoding</th><th>Variables</th><th>Clauses</th><th>Time</th></tr>
-      </thead>
-      <tbody>
-        <tr><td>Counting (B)</td><td>5</td><td>3</td><td>5s</td></tr>
-        <tr><td>Sync+PickK (A)</td><td>9</td><td>5</td><td>2.5s</td></tr>
-        <tr><td>Async+PickK (original)</td><td>11</td><td>~12</td><td>3hr</td></tr>
-      </tbody>
-    </table>
-    <p>Going from 5 to 9 variables barely matters. Going from 5 to 12 clauses is catastrophic. <strong>Clause count matters more than variable count</strong> for PCSAT performance in this domain.</p>
-
-    <h3>Pattern: The "PickK search &rarr; settle" two-phase strategy</h3>
-    <p>The PickK rules encode a proof strategy:</p>
-    <ol>
-      <li><strong>Phase 1 (d &lt; d0)</strong>: Keep refocusing to current index. Each TT step tests equality. If equal, bank it (d++). </li>
-      <li><strong>Phase 2 (d &ge; d0)</strong>: Stop refocusing. Prophecy fulfilled. Remaining steps are worst-case.</li>
-    </ol>
-    <p>This is a general pattern that could apply to any property that benefits from counting "good" positions. Future examples might use different criteria for "good" (not just equality).</p>
-
-    <h3>Anti-pattern: Don't use async for deterministic-order loops</h3>
-    <p>If both runs iterate <code>0, 1, 2, ..., n-1</code> in order, use a single counter. The async model's freedom to interleave is wasted (all interleavings reach the same final state) but costs the solver enormously.</p>
-    <hr>
-
-    <h2>7. What's Next</h2>
-
-    <h3>Immediate (for the paper)</h3>
-    <ol>
-      <li>countpositive: sync+PickK (2.5s), fixed-k comparison (4.5s), counting baseline (5s)</li>
-      <li>arraysum_mixed: sync+PickK+eps (25s) &mdash; the killer example</li>
-      <li>Try more algorithms: count_in_range, weighted_sum, conditional_accumulate</li>
-      <li>Write up the comparison table for the paper</li>
-    </ol>
-
-    <h3>Future directions</h3>
-    <ul>
-      <li><strong>Async cost</strong>: Find an algorithm where async + PickK is necessary (cost depends on data-dependent control flow). This would show the framework's generality even if solver time is longer.</li>
-      <li><strong>Tighter bounds</strong>: For arraysum, the HIT-unequal case could be split further (both positive contribution &rarr; tighter bound). Need to see if PCSAT can handle the extra cases.</li>
-      <li><strong>Multiple distinguished cells</strong>: Instead of one PickK, could we have PickK1, PickK2? Track two cells simultaneously? Would add variables but might give tighter bounds for algorithms with two interacting cost-relevant positions.</li>
-    </ul>
-    <hr>
-
-    <h2>8. Async Exploration: Stride-1 vs Stride-2</h2>
-
-    <h3>The Setup</h3>
-    <p>Two DIFFERENT programs on two RELATED arrays:</p>
-<pre><code>P1(A1, n):                    P2(A2, n):
-  for i1 = 0 to n-1:            for i2 = 0 to n-1 step 2:
-    if A1[i1] &gt; 0: cost1++        if A2[i2] &gt; 0: cost2++</code></pre>
-    <p>P1 visits every position (stride 1, n iterations). P2 visits even positions only (stride 2, n/2 iterations). The counters diverge: after one step each, i1=1 but i2=2.</p>
-    <p><strong>Property:</strong> <code>cost1 - cost2 &le; n - d0</code>, where d0 counts equal values at even positions (the intersection of both programs' index sets).</p>
-
-    <h3>Why This Genuinely Needs Async</h3>
-    <p>The scheduler must interleave P1 and P2's steps. A natural pattern emerges:</p>
-    <ul>
-      <li><strong>TT</strong> (both step): i1&rarr;i1+1, i2&rarr;i2+2. If aligned (i1=i2=2j), they see the same even position. PickK can discover equality here (d++). But now i1=2j+1, i2=2j+2 &mdash; misaligned.</li>
-      <li><strong>TF</strong> (P1 catches up): i1&rarr;i1+1. Now i1=2j+2, i2=2j+2 &mdash; realigned!</li>
-      <li>Repeat: TT, TF, TT, TF, ... gives epochs where PickK can focus on each even position.</li>
-    </ul>
-    <p>The scheduler ARRANGES the alignment. PickK exploits it. This is the interplay we want to demonstrate.</p>
-
-    <h3>Two Encodings</h3>
-    <table>
-      <thead>
-        <tr><th>File</th><th>Model</th><th>Scheduler?</th><th>Clauses</th><th>Variables</th></tr>
-      </thead>
-      <tbody>
-        <tr><td><code>stride12_cost_sync.clp</code></td><td>Epoch sync</td><td>No</td><td>~5</td><td>9</td></tr>
-        <tr><td><code>stride12_cost_async.clp</code></td><td>Full async</td><td>Yes (SchTF/FT/TT)</td><td>11</td><td>10</td></tr>
-      </tbody>
-    </table>
-    <p>The sync epoch model absorbs the stride difference into per-epoch semantics (each epoch = P1 does 2 steps, P2 does 1). It's a shortcut that avoids the scheduler entirely. <strong>Already verified UNSAT.</strong></p>
-    <p>The async model is the real test: can PCSAT handle full scheduler + PickK + prophecy on a problem that genuinely has different strides? Based on async countpositive (~3hr), it might be slow. But this is a more meaningful example because the scheduler isn't just adding spurious interleavings &mdash; it's actually needed to arrange the alignment pattern.</p>
-
-    <h3>The Invariant PCSAT Needs to Find</h3>
-    <p>For the async model, the invariant is more complex. At any point:</p>
-    <ul>
-      <li>P1 has processed i1 positions, P2 has processed i2/2 positions (since i2 is always even)</li>
-      <li>cost1 &le; i1 (at most one count per P1 step)</li>
-      <li>cost2 &le; i2/2 (at most one count per P2 step)</li>
-      <li>d counts discovered equal positions at even indices where both were aligned</li>
-    </ul>
-    <p>The expected invariant shape: <code>c &le; i1 - d</code> (P1's maximum minus the savings from equal positions). At termination (i1=n, i2=n, d&ge;d0): <code>c &le; n - d0</code>.</p>
-
-    <h3>Lessons (pending verification)</h3>
-    <ul>
-      <li>If async UNSAT in reasonable time: proves the framework handles genuinely different programs with different strides. Major result for the paper.</li>
-      <li>If async times out: confirms the scheduler bottleneck scales to new examples. The epoch sync model (already verified) is the practical encoding, while the async formulation shows what the IDEAL encoding would look like.</li>
-      <li>Either way, having both encodings demonstrates the design space clearly.</li>
-    </ul>
-
-    <hr>
-    <h2>CountInRange Deep Dive</h2>
-    <p>Demonstrates that the PickK+prophecy encoding is <strong>abstraction-agnostic</strong>: same 9 variables, same 5 clauses, same n&minus;d0 bound regardless of whether you're checking <code>x &gt; 0</code> or <code>lo &le; x &le; hi</code>.</p>
-    <p>The branch condition literally doesn't matter to the encoding structure. CountInRange uses the predicate <code>lo &le; A[i] &le; hi</code> instead of <code>A[i] &gt; 0</code>, but the cost abstraction is identical: HIT-equal &rarr; same branch &rarr; c unchanged; HIT-unequal/MISS &rarr; branches may differ &rarr; c &#177; 1.</p>
-    <div class="info-box">
-      <strong>Result:</strong> UNSAT &mdash; bound n&minus;d0. Same structure as CountPositive. The branch condition is irrelevant to the proof.
+    <div class="info-box amber">
+      <strong>KEY INSIGHT</strong><br><br>
+      The branch condition (<code>lo &le; x &le; hi</code> vs <code>x &gt; 0</code>) is irrelevant. The encoding only asks: are the values equal? Equal &rarr; same branch &rarr; cost neutral. Unequal &rarr; branches may differ &rarr; &plusmn;1. <strong>Any</strong> program of the form <code>if P(A[i]): cost++</code> has the same encoding.
     </div>
 
+    <h3>What the encoding sees at each step</h3>
+<pre><code>Is i = kp? (HIT or MISS)
+If HIT: is bkp = 1? (equal or unequal)
+
+Equal &rarr; same branch (regardless of WHAT the branch IS) &rarr; c' = c
+Unequal &rarr; branches may differ &rarr; c' = c + 1
+MISS &rarr; unknown &rarr; c' = c + 1</code></pre>
+
+    <h3>Transition (identical to Stage 2a)</h3>
+<pre><code>(
+  (* HIT equal: same value =&gt; same branch =&gt; cost neutral *)
+  (i = kp and bkp = 1
+   and c' = c       and d' = d + 1)
+  or
+  (* HIT unequal: range check may differ, cost +1 *)
+  (i = kp and bkp = 0
+   and c' = c + 1   and d' = d)
+  or
+  (* MISS: unknown, worst case +1 *)
+  (i &lt;&gt; kp
+   and c' = c + 1   and d' = d)
+)</code></pre>
+    <div class="info-box success">
+      <strong>Result:</strong> UNSAT (5.0s, 13 iterations) &mdash; bound n&minus;d0. Same structure as CountPositive. The branch condition is irrelevant to the proof.
+    </div>
     <hr>
-    <h2>ExpensiveBranch Analysis</h2>
-    <p>Shows how <strong>non-unit cost per step</strong> scales the bound linearly: &#177;2 per step &rarr; 2&middot;(n&minus;d0) bound.</p>
-    <p>Instead of counting +1 or 0, each step costs up to K units. The encoding uses range constraints <code>c' &le; c+K</code> and <code>c' &ge; c-K</code> instead of fixed assignments. The bound becomes K&middot;(n&minus;d0).</p>
-    <div class="info-box">
-      <strong>Result:</strong> UNSAT &mdash; bound 2(n&minus;d0) for K=2. Linear scaling of the PickK+prophecy bound.
+
+    <h2>2. ExpensiveBranch &mdash; Non-Unit Cost</h2>
+<pre><code>ExpensiveBranch(A, n):
+    cost := 0
+    for i = 0 to n-1:
+        if A[i] &gt; 0:
+            cost += 2          (* expensive: e.g., two array writes *)</code></pre>
+    <p><strong>Property:</strong> <code>|cost1 &minus; cost2| &le; 2&middot;(n &minus; d0)</code></p>
+
+    <div class="info-box amber">
+      <strong>KEY INSIGHT</strong><br><br>
+      The branch costs <strong>2</strong> instead of 1. Each disagreeing position changes the cost difference by up to 2. The coefficient flows through to the bound: <code>2&middot;(n &minus; d0)</code>.
     </div>
 
+    <h3>What changes from CountPositive</h3>
+<pre><code>CountPositive:      HIT unequal / MISS &rarr; c' = c + 1     (unit cost)
+ExpensiveBranch:    HIT unequal / MISS &rarr; c' &isin; [c-2, c+2]  (cost &plusmn;2)</code></pre>
+
+    <h3>Transition (only cost magnitude differs)</h3>
+<pre><code>(
+  (* HIT equal: still free *)
+  (i = kp and bkp = 1
+   and c' = c                     and d' = d + 1)
+  or
+  (* HIT unequal: cost &plusmn;2, not &plusmn;1 *)
+  (i = kp and bkp = 0
+   and c' &le; c + 2 and c' &ge; c - 2   and d' = d)
+  or
+  (* MISS: same &plusmn;2 *)
+  (i &lt;&gt; kp
+   and c' &le; c + 2 and c' &ge; c - 2   and d' = d)
+)</code></pre>
+    <h3>Goal</h3>
+<pre><code>c &gt; 2 * (n - d0) :-         (* coefficient 2 appears in bound *)
+  Inv(...), n &le; i, d &ge; d0.</code></pre>
+    <p>PCSAT discovers the invariant <code>c &le; 2&middot;(i &minus; d)</code>. At termination: <code>c &le; 2&middot;(n &minus; d0)</code>.</p>
+    <div class="info-box success">
+      <strong>Result:</strong> UNSAT (8.2s, 14 iterations) &mdash; bound 2(n&minus;d0). Linear scaling of the PickK+prophecy bound.
+    </div>
     <hr>
-    <h2>InplaceMap (Mutable Arrays)</h2>
-    <p>Handles <strong>mutable arrays</strong> where the algorithm overwrites array positions during execution. Critical insight: the mutation function must be deterministic (f preserves equality), and the encoding must track how f applies independently to ak1 and ak2 at HIT vs MISS positions.</p>
-    <h3>Key Requirement</h3>
-    <p>The mutation function <code>f</code> must be a <strong>function</strong> (deterministic). If <code>A1[i] = A2[i]</code>, then <code>f(A1[i]) = f(A2[i])</code>. This means equal positions stay equal after mutation &mdash; PickK&rsquo;s discovery mechanism is undisturbed.</p>
-    <h3>HIT vs MISS Cell Updates</h3>
-    <ul>
-      <li><strong>HIT</strong>: Mutates the cell (applies f to ak1, ak2 independently)</li>
-      <li><strong>MISS</strong>: Cell unchanged (mutation is at position i &ne; k)</li>
-    </ul>
-    <div class="info-box">
-      <strong>Result:</strong> UNSAT (30.6s) &mdash; bound n&minus;d0. Slowest sync example due to f's two branches, but still manageable.
+
+    <h2>3. InplaceMap &mdash; Mutable Arrays</h2>
+<pre><code>InplaceMap(A, n):
+    for i = 0 to n-1:
+        x = A[i]               (* read *)
+        A[i] = f(x)            (* write back: f(x) = x&gt;0 ? x+1 : 1 *)</code></pre>
+    <p><strong>Property:</strong> <code>|cost1 &minus; cost2| &le; n &minus; d0</code> (cost counts iterations where the two runs take different branches of <code>f</code>)</p>
+
+    <div class="info-box amber">
+      <strong>KEY INSIGHT</strong><br><br>
+      Unlike read-only scans, InplaceMap <strong>writes to the array</strong>. Cell values <em>mutate</em> during execution. The critical requirement: <code>f</code> preserves equality &mdash; if <code>ak1 = ak2</code>, then <code>f(ak1) = f(ak2)</code>. Equal cells stay equal after mutation, so PickK's discovery mechanism is undisturbed.
     </div>
 
+    <h3>f preserves equality</h3>
+<pre><code>ak1p = ak2p = 5  &rarr; f(5) = 6,  f(5) = 6  &rarr; ak1' = ak2' = 6  &check;
+ak1p = ak2p = &minus;3 &rarr; f(&minus;3) = 1, f(&minus;3) = 1 &rarr; ak1' = ak2' = 1  &check;
+ak1p = ak2p = 0  &rarr; f(0) = 1,  f(0) = 1  &rarr; ak1' = ak2' = 1  &check;</code></pre>
+
+    <h3>Transition: Cell Mutation is Explicit</h3>
+    <p>The HIT cases explicitly compute <code>f</code> &mdash; this is where InplaceMap differs from read-only examples:</p>
+<pre><code>(
+  (* HIT equal: f preserves equality *)
+  (i = kp and bkp = 1
+   and (
+     (ak1p &gt; 0 and ak1' = ak1p + 1)      (* f(x) = x+1 when x&gt;0 *)
+     or
+     (ak1p &le; 0 and ak1' = 1)             (* f(x) = 1 when x&le;0 *)
+   )
+   and ak2' = ak1'                          (* equal in &rarr; equal out *)
+   and c' = c and d' = d + 1)
+  or
+  (* HIT unequal: apply f independently *)
+  (i = kp and bkp = 0
+   and (
+     (ak1p &gt; 0 and ak1' = ak1p + 1) or (ak1p &le; 0 and ak1' = 1)
+   )
+   and (
+     (ak2p &gt; 0 and ak2' = ak2p + 1) or (ak2p &le; 0 and ak2' = 1)
+   )
+   and c' = c + 1 and d' = d)
+  or
+  (* MISS: cell unchanged &mdash; not the position being mapped *)
+  (i &lt;&gt; kp
+   and ak1' = ak1p and ak2' = ak2p
+   and c' = c + 1 and d' = d)
+)</code></pre>
+
+    <h3>Comparison with Stage 2a (Read-Only)</h3>
+    <table>
+      <tr><th>Part</th><th>Stage 2a (CountPositive)</th><th>InplaceMap</th></tr>
+      <tr><td>HIT equal cell update</td><td><code>ak1' = ak1p</code> (copy)</td><td><code>ak1' = f(ak1p)</code>, <code>ak2' = ak1'</code></td></tr>
+      <tr><td>HIT unequal cell update</td><td><code>ak1' = ak1p, ak2' = ak2p</code></td><td><code>ak1' = f(ak1p), ak2' = f(ak2p)</code></td></tr>
+      <tr><td>MISS cell update</td><td><code>ak1' = ak1p, ak2' = ak2p</code></td><td><code>ak1' = ak1p, ak2' = ak2p</code> (same)</td></tr>
+    </table>
+
+    <h3>Comparison with Prior Work</h3>
+    <table>
+      <tr><th></th><th>Original (async, fixed-k)</th><th>This (sync, PickK)</th></tr>
+      <tr><td>Bound</td><td><code>n &minus; 1</code></td><td><code>n &minus; d0</code></td></tr>
+      <tr><td>Goal constraint</td><td>Requires <code>bk = 1</code></td><td>No bk constraint</td></tr>
+      <tr><td>Model</td><td>Async (i1, i2, scheduler)</td><td>Sync (single i)</td></tr>
+    </table>
+    <div class="info-box success">
+      <strong>Result:</strong> UNSAT (30.6s, 34 iterations) &mdash; bound n&minus;d0. Slowest sync example due to f's two branches, but still manageable.
+    </div>
     <hr>
-    <h2>ConditionalCost (&epsilon;-dependent)</h2>
-    <p>The <strong>turning point</strong>: where PickK becomes genuinely necessary because cost depends on actual VALUES not just equality.</p>
-    <h3>Why PickK Is Essential Here</h3>
-    <p>CountPositive can be proved by counting alone (per-step contribution is constant &#177;1). ConditionalCost cannot &mdash; the per-step contribution is <code>A[i]</code>, which is unbounded without the &epsilon; assumption.</p>
+
+    <h2>4. ConditionalCost &mdash; Value-Dependent (needs &epsilon;)</h2>
+<pre><code>ConditionalCost(A, n):
+    cost := 0
+    for i = 0 to n-1:
+        if A[i] &gt; 0:
+            cost += A[i]       (* cost is the VALUE itself *)</code></pre>
+    <p><strong>Property (mixed metric):</strong> d0 equal positions + all positions &epsilon;-close &rArr; <code>cost1 &minus; cost2 &le; (n &minus; d0) &middot; &epsilon;</code></p>
+
+    <div class="info-box amber">
+      <strong>KEY INSIGHT</strong><br><br>
+      This is the <strong>only</strong> example requiring all three ingredients (PickK + prophecy + &epsilon;). Without &epsilon;, cost per step is unbounded. The Lipschitz property of <code>max(x,0)</code> converts input closeness into cost closeness: <code>|max(a1,0) &minus; max(a2,0)| &le; |a1 &minus; a2| &le; &epsilon;</code>.
+    </div>
+
+    <h3>Why &epsilon; is Required (but not in examples 1&ndash;3)</h3>
+<pre><code>CountPositive:     cost += 1   &rarr; cost diff per step &isin; {0, &plusmn;1}  &rarr; bounded &check;
+ExpensiveBranch:   cost += 2   &rarr; cost diff per step &isin; {0, &plusmn;2}  &rarr; bounded &check;
+InplaceMap:        branch cost &rarr; cost diff per step &isin; {0, &plusmn;1}  &rarr; bounded &check;
+
+ConditionalCost:   cost += A[i] &rarr; cost diff per step = ???    &rarr; UNBOUNDED!
+  If a1[i]=100, a2[i]=0: cost diff is 100. No fixed bound.</code></pre>
+
     <h3>The Three Ingredients</h3>
     <table>
       <tr><th>Ingredient</th><th>What it provides</th><th>Without it</th></tr>
@@ -738,15 +675,13 @@ At termination: "found d &ge; d0 good positions, so cost diff &le; n - d0"</code
       <tr><td><strong>Prophecy (d0)</strong></td><td>Parameterizes by input similarity</td><td>Must commit to specific count</td></tr>
       <tr><td><strong>Epsilon (&epsilon;)</strong></td><td>Bounds per-step cost at unequal positions</td><td>Cost difference unbounded</td></tr>
     </table>
-    <h3>The Lipschitz Bridge</h3>
-    <p><code>max(x, 0)</code> is 1-Lipschitz: <code>|max(a1,0) &minus; max(a2,0)| &le; |a1 &minus; a2| &le; &epsilon;</code>. This converts input closeness into cost closeness.</p>
-    <div class="info-box">
-      <strong>Result:</strong> UNSAT (11.5s) &mdash; bilinear bound (n&minus;d0)&middot;&epsilon;. First example requiring all three ingredients.
+    <div class="info-box success">
+      <strong>Result:</strong> UNSAT (11.5s, 15 iterations) &mdash; bilinear bound (n&minus;d0)&middot;&epsilon;. First example requiring all three ingredients. See <a href="../countpositive/">CountPositive Stage 2b</a> for the full walkthrough.
     </div>
-
     <hr>
-    <h2>ArraySum Mixed Metric</h2>
-    <p>The <strong>canonical value-dependent example</strong>. No branches, no conditionals &mdash; the cost difference comes purely from value differences. Combines replace metric (d0 equal positions) with L&infin; metric (&epsilon;-closeness) to prove (n&minus;d0)&middot;&epsilon;.</p>
+
+    <h2>5. ArraySum Mixed Metric</h2>
+    <p>The <strong>canonical value-dependent example</strong>. No branches, no conditionals &mdash; the cost difference comes purely from value differences. Combines replace metric (d0 equal positions) with L&infin; metric (&epsilon;-closeness).</p>
     <h3>Precision Hierarchy</h3>
 <pre><code>|sum1 &minus; sum2| &le;
   n &middot; max_val        (no info)
@@ -754,55 +689,318 @@ At termination: "found d &ge; d0 good positions, so cost diff &le; n - d0"</code
   (n &minus; 1) &middot; &epsilon;         (fixed-k + &epsilon;)
   (n &minus; d0) &middot; &epsilon;        (PickK + prophecy + &epsilon;) &larr; this encoding
   0                     (identical arrays, d0 = n)</code></pre>
-    <p>This directly improves prior robustness work from n&middot;&epsilon; to (n&minus;d0)&middot;&epsilon;.</p>
-    <div class="info-box">
+
+    <h3>Approach Comparison</h3>
+    <table>
+      <tr><th>Approach</th><th>ArraySum Bound</th><th>Why</th></tr>
+      <tr><td>No morphing (counting only)</td><td>n &middot; max_val</td><td>No value info at any position</td></tr>
+      <tr><td>Fixed-k + &epsilon;</td><td>n &middot; &epsilon;</td><td>One cell tracked, rest bounded by &epsilon;</td></tr>
+      <tr><td><strong>PickK + prophecy + &epsilon;</strong></td><td><strong>(n &minus; d0) &middot; &epsilon;</strong></td><td>d0 equal positions contribute 0; rest bounded by &epsilon;</td></tr>
+    </table>
+    <div class="info-box success">
       <strong>Result:</strong> UNSAT (25s) &mdash; bound (n&minus;d0)&middot;&epsilon;. Tightest non-trivial bound. Encoding structurally identical to ConditionalCost.
     </div>
-
     <hr>
-    <h2>Stride Analysis (Epochs)</h2>
-    <p>Handles <strong>two different programs</strong> (stride-1 vs stride-2) by grouping steps into epochs instead of using async scheduling.</p>
+
+    <h2>6. Stride Analysis (Epoch Model)</h2>
+    <p>Handles <strong>two different programs</strong> (stride-1 vs stride-2) by grouping steps into epochs instead of async scheduling.</p>
+<pre><code>P1(A1, n):                    P2(A2, n):
+  for i1 = 0 to n-1:            for i2 = 0 to n-1 step 2:
+    if A1[i1] &gt; 0: cost1++        if A2[i2] &gt; 0: cost2++</code></pre>
     <h3>The Epoch Model</h3>
-    <p>Each epoch covers 2 P1 positions and 1 P2 position. After each epoch, both programs have advanced by the same &ldquo;amount&rdquo; of array coverage. The epoch counter is synchronized &mdash; no scheduler needed.</p>
+    <p>Each epoch covers 2 P1 positions and 1 P2 position. The epoch counter is synchronized &mdash; no scheduler needed. P1 processes both 2j and 2j+1, P2 processes only 2j.</p>
     <h3>Key Difference: HIT-equal Is Not Cost-Neutral</h3>
-    <p>Unlike CountPositive (where discovering equality saves the full step cost), here the odd position within the epoch is invisible to P2 but visible to P1. HIT-equal cost can increase by 0 or 1.</p>
-    <p>The invariant PCSAT discovers: <code>c &le; 2j &minus; d</code> (coefficient 2 from the two P1 positions per epoch).</p>
-    <div class="info-box">
+    <p>The odd position within the epoch is invisible to P2 but visible to P1. HIT-equal cost can increase by 0 or 1. PCSAT discovers the invariant: <code>c &le; 2j &minus; d</code>.</p>
+    <div class="info-box success">
       <strong>Result:</strong> UNSAT &mdash; 9 variables, 5 clauses. Same encoding size as CountPositive. Stride asymmetry adds no complexity.
     </div>
+  </div>
 
+  <!-- ============ ASYNC FRONTIER PANEL ============ -->
+  <div id="panel-async" class="panel content">
+    <h1>The Async Frontier</h1>
+    <p>When synchronized models don't apply, what happens? Deep analysis of the async bottleneck and strategies for tractability.</p>
     <hr>
-    <h2>Stride Analysis (Async)</h2>
-    <p>The full async machinery for stride-1 vs stride-2: two counters i1/i2, three scheduler predicates (SchTF, SchFT, SchTT), fairness constraints. 10 variables, 11 clauses.</p>
-    <h3>The Scheduler's Meaningful Role</h3>
-    <p>Unlike async CountPositive (where the scheduler is pure overhead), here the scheduler <strong>genuinely arranges alignment</strong>. The TT-TF alternation pattern lets PickK test equality at even positions.</p>
-    <h3>Expected Performance</h3>
-    <p>Based on async countpositive (~3 hours), this encoding is likely slow. The epoch model (above) is the practical encoding; this documents the full async formulation.</p>
-    <div class="info-box">
-      <strong>Status:</strong> 10 variables, 11 clauses. Expected slow (~hours). Epoch model is the practical alternative.
-    </div>
 
-    <hr>
-    <h2>Async Bottleneck Analysis</h2>
-    <p>The <strong>smoking gun</strong>: CountPositive encoded both ways &mdash; sync (2.5s, 9 vars, 5 clauses) vs async (~3 hours, 11 vars, 11 clauses). <strong>4000&times; speedup just from modeling choice.</strong></p>
-    <h3>Why Clauses Matter More Than Variables</h3>
+    <h2>Why Async CountPositive Takes 3 Hours</h2>
+    <p>The <strong>smoking gun</strong>: CountPositive encoded both ways &mdash; sync (2.5s) vs async (~3 hours). <strong>4000&times; speedup just from modeling choice.</strong></p>
+
+    <h3>Clause Count: The Real Bottleneck</h3>
     <table>
-      <tr><th>Encoding</th><th>Variables</th><th>Clauses</th><th>Time</th></tr>
-      <tr><td>Counting (no morphing)</td><td>5</td><td>3</td><td>5s</td></tr>
-      <tr><td>Sync + PickK</td><td>9</td><td>5</td><td>2.5s</td></tr>
-      <tr><td>Async</td><td>11</td><td>11</td><td>~3 hr</td></tr>
+      <thead>
+        <tr><th>Model</th><th>Inv vars</th><th>Unknown predicates</th><th>Horn clauses</th><th>Time</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>Sync</strong></td><td>9</td><td>Inv, PickK, Wit (3)</td><td><strong>5</strong></td><td>2.5s</td></tr>
+        <tr><td><strong>Async</strong></td><td>11</td><td>Inv, PickK, SchTF, SchFT, SchTT (5)</td><td><strong>11</strong></td><td>~3 hr</td></tr>
+      </tbody>
     </table>
-    <p>Going from 5 to 9 variables barely matters. Going from 5 to 11 clauses is <strong>catastrophic</strong>. PCSAT must find an invariant simultaneously inductive under ALL clauses. Constraint interactions cause combinatorial explosion.</p>
-    <h3>The Decision Rule</h3>
-<pre><code>If BOTH runs iterate for i = 0 to n-1 (same fixed order):
-  &rarr; Use SYNC. Single counter. No scheduler. ~5 clauses.
 
-If runs CAN visit different indices:
-  &rarr; Use ASYNC. Two counters. Full scheduler. ~11 clauses.
-  &rarr; Consider EPOCH MODEL if stride ratio is fixed.</code></pre>
+    <h3>What the Async Scheduler Adds</h3>
+<pre><code>Shared (sync has these too):     Async-only (6 extra clauses):
+  Init clause                      TF transition (Run 1 steps)
+  Main transition                  FT transition (Run 2 steps)
+  PickK searching rule             TT transition (Both step)
+  PickK settled rule               SchTF fairness
+  Goal clause                      SchFT fairness
+                                   Scheduler disjunction
+
+5 clauses                          + 6 = 11 clauses total</code></pre>
+
     <div class="info-box purple">
-      <strong>Key Finding:</strong> Clause count is the dominant performance factor for PCSAT. The async scheduler is the entire bottleneck &mdash; 3hr &rarr; 2.5s by removing it. Don&rsquo;t use async for deterministic-order loops.
+      <strong>Why More Clauses = Exponentially Harder</strong><br><br>
+      PCSAT must find an invariant that is simultaneously inductive under ALL clauses. Each clause imposes constraints on the invariant shape. With 5 clauses, the constraint system is tractable. With 11 clauses, the interaction between constraints causes combinatorial explosion.
     </div>
+
+    <h3>Experimental Evidence</h3>
+    <table>
+      <thead>
+        <tr><th>Encoding</th><th>Variables</th><th>Clauses</th><th>Time</th><th>Observation</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Counting (no morphing)</td><td>5</td><td>3</td><td>5s</td><td>Baseline: property is simple</td></tr>
+        <tr><td>Sync + PickK</td><td>9</td><td>5</td><td><strong>2.5s</strong></td><td>PickK is free (even faster!)</td></tr>
+        <tr><td>Fixed-k (no PickK)</td><td>7</td><td>5</td><td>4.5s</td><td>Proves n&minus;1 only</td></tr>
+        <tr><td>Async + PickK</td><td>11</td><td>11</td><td>~3 hr</td><td>Scheduler is the bottleneck</td></tr>
+      </tbody>
+    </table>
+    <p>5 &rarr; 9 variables barely matters. 5 &rarr; 11 clauses is <strong>catastrophic</strong>. <strong>Performance scales with clauses, not variables.</strong></p>
+    <hr>
+
+    <h2>When Is Async Genuinely Needed?</h2>
+    <p>CountPositive has deterministic iteration order &mdash; both runs visit 0, 1, 2, &hellip;, n&minus;1 in order. The async scheduler adds spurious interleavings. But some algorithms truly require it:</p>
+    <table>
+      <thead>
+        <tr><th>Pattern</th><th>Why runs diverge</th><th>Example</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Data-dependent stride</td><td>Step size varies by value</td><td><code>i += A[i]&gt;0 ? 2 : 1</code></td></tr>
+        <tr><td>Data-dependent skip</td><td>Some iterations skipped</td><td>Kruskal: add/skip edge</td></tr>
+        <tr><td>Early termination</td><td>Loop exits at different points</td><td>Linear search, find-first</td></tr>
+        <tr><td>Different programs</td><td>Structurally different loops</td><td>Stride-1 vs stride-2</td></tr>
+      </tbody>
+    </table>
+
+    <div class="info-box">
+      <strong>Decision Rule</strong><br><br>
+      If BOTH runs iterate <code>for i = 0 to n-1</code> (same fixed order) &rarr; Use <strong>SYNC</strong>. Single counter. ~5 clauses.<br><br>
+      If runs CAN visit different indices &rarr; Use <strong>ASYNC</strong>. Two counters. ~11 clauses.<br>
+      &rarr; Consider <strong>EPOCH MODEL</strong> if stride ratio is fixed (e.g., stride-1 vs stride-2).
+    </div>
+    <hr>
+
+    <h2>Case Study: StrideProcess</h2>
+    <p>A genuinely async algorithm where the stride depends on data:</p>
+<pre><code>StrideProcess(A, n):
+    cost := 0
+    i := 0
+    while i &lt; n:
+        if A[i] &gt; 0:
+            cost++
+            i += 2             (* skip next *)
+        else:
+            i += 1             (* normal step *)</code></pre>
+    <p>When <code>A1</code> and <code>A2</code> differ, the runs take different strides, so the loop counters diverge:</p>
+<pre><code>A1 = [3, -1, 5, 2, -4]    A2 = [3, -1, -2, 2, -4]
+                                    ^-- differs at index 2
+
+Run 1: i=0 (A1[0]=3&gt;0, skip) &rarr; i=2 (A1[2]=5&gt;0, skip) &rarr; i=4 (A1[4]=-4, step) &rarr; i=5. Done.
+Run 2: i=0 (A2[0]=3&gt;0, skip) &rarr; i=2 (A2[2]=-2, step) &rarr; i=3 (A2[3]=2&gt;0, skip) &rarr; i=5. Done.
+
+After step 2: Run 1 at i=4, Run 2 at i=3 &mdash; DIVERGED!</code></pre>
+    <p>No sync model can capture this &mdash; the scheduler must interleave the runs to explore all possible divergence patterns.</p>
+
+    <h3>The PickK Dilemma in Async</h3>
+    <p>With two counters <code>i1 &ne; i2</code>, which index should PickK focus on?</p>
+    <table>
+      <tr><th>Option</th><th>Focus on</th><th>Implication</th></tr>
+      <tr><td>A: Always i1</td><td>Run 1&rsquo;s position</td><td>No info at Run 2&rsquo;s position</td></tr>
+      <tr><td>B: Always i2</td><td>Run 2&rsquo;s position</td><td>No info at Run 1&rsquo;s position</td></tr>
+      <tr><td>C: Only when i1=i2</td><td>Aligned positions</td><td>Both runs see the same element</td></tr>
+    </table>
+    <p>Option C is most promising &mdash; when counters align, both runs see the same position, and PickK can discover equality. But the scheduler must <em>arrange</em> alignment, which requires coordination.</p>
+    <hr>
+
+    <h2>Stride-1 vs Stride-2: Two Approaches</h2>
+    <table>
+      <thead>
+        <tr><th>File</th><th>Model</th><th>Scheduler?</th><th>Clauses</th><th>Vars</th><th>Status</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>stride12_cost_sync.clp</code></td><td>Epoch sync</td><td>No</td><td>~5</td><td>9</td><td><strong>UNSAT</strong></td></tr>
+        <tr><td><code>stride12_cost_async.clp</code></td><td>Full async</td><td>Yes</td><td>11</td><td>10</td><td>Expected slow</td></tr>
+      </tbody>
+    </table>
+    <p>The <strong>epoch sync model</strong> absorbs the stride difference: each epoch j covers positions 2j and 2j+1 for P1 and position 2j for P2. No scheduler needed. Already verified UNSAT.</p>
+    <p>The <strong>full async model</strong> is the real test: can PCSAT handle full scheduler + PickK + prophecy on a genuinely async problem? Here, unlike CountPositive, the scheduler isn't adding spurious interleavings &mdash; it's actually needed to arrange alignment.</p>
+
+    <div class="info-box">
+      <strong>The Scheduler's Meaningful Role</strong><br><br>
+      TT (both step): i1&rarr;i1+1, i2&rarr;i2+2. At alignment (i1=i2=2j), PickK discovers equality (d++). Now i1=2j+1, i2=2j+2 &mdash; misaligned.<br>
+      TF (P1 catches up): i1&rarr;i1+1. Now i1=2j+2, i2=2j+2 &mdash; realigned!<br><br>
+      Pattern: TT, TF, TT, TF, &hellip; gives epochs where PickK can focus on each even position. The scheduler <em>arranges</em> alignment; PickK <em>exploits</em> it.
+    </div>
+    <hr>
+
+    <h2>Strategies for Making Async Tractable</h2>
+    <p>Four approaches under investigation:</p>
+
+    <div class="info-box amber">
+      <strong>1. Simplify the Scheduler</strong><br>
+      Restrict interleavings to the TT-TF pattern instead of allowing arbitrary scheduling. Fewer clauses, more structured search.
+    </div>
+    <div class="info-box amber">
+      <strong>2. Two-Counter Sync (Most Promising)</strong><br>
+      Both runs step every iteration but advance by different amounts. No scheduler needed &mdash; just two counters that increment differently. Gives sync-like clause count (~5) with async-like expressiveness.
+    </div>
+    <div class="info-box amber">
+      <strong>3. Prophecy Over Alignment</strong><br>
+      Prophesy the alignment pattern itself: &ldquo;the runs will be aligned at least d0 times.&rdquo; Moves alignment reasoning from the scheduler into the prophecy framework.
+    </div>
+    <div class="info-box amber">
+      <strong>4. Gap Bounds Instead of Exact Tracking</strong><br>
+      Instead of tracking exact counter positions, track the gap <code>|i1 &minus; i2|</code> and bound how it evolves. Reduces state without losing the essential cost information.
+    </div>
+
+    <div class="info-box purple">
+      <strong>Bottom Line</strong><br><br>
+      Sync works great for deterministic-order loops (&gt;90% of examples). Async + PickK for execution cost is an open problem &mdash; the scheduler's 6 extra clauses cause combinatorial explosion. The two-counter sync idea is the most promising path forward: both runs step together, different amounts, no scheduler overhead.
+    </div>
+  </div>
+
+  <!-- ============ RESEARCH SUMMARY PANEL ============ -->
+  <div id="panel-summary" class="panel content">
+    <h1>Research Summary</h1>
+    <p>Key findings, the full results table, cost pattern taxonomy, and an encoding checklist for practitioners.</p>
+    <hr>
+
+    <h2>Problem and Contributions</h2>
+    <p>Standard cell morphing tracks one fixed cell <code>k</code>. For output properties (robustness, sensitivity), one cell suffices because &epsilon;-closeness absorbs the unknown cells. For <strong>cost properties</strong>, each cell's contribution matters &mdash; one cell gives at best an <code>n &minus; 1</code> bound.</p>
+
+    <p><strong>PickK + Prophecy</strong> breaks this ceiling:</p>
+    <ul>
+      <li><strong>PickK</strong>: Dynamically re-focuses the distinguished cell to discover positions where <code>A1[i] = A2[i]</code></li>
+      <li><strong>Prophecy d0</strong>: &ldquo;At least d0 positions are equal&rdquo; &mdash; parameterizes the bound by input similarity</li>
+      <li>Result: bound <code>f(n &minus; d0)</code> instead of <code>f(n &minus; 1)</code></li>
+    </ul>
+
+    <div class="info-box">
+      See the <a href="../countpositive/">CountPositive staged tutorial</a> for the full step-by-step development: Stage 1 (fixed-k ceiling) &rarr; Stage 2a (PickK + prophecy) &rarr; Stage 2b (+ epsilon).
+    </div>
+    <hr>
+
+    <h2>Key Findings</h2>
+
+    <h3>1. PickK Has Zero Overhead</h3>
+    <p>Sync+PickK (9 vars, 5 clauses) was <strong>faster</strong> than pure counting (5 vars, 3 clauses): 2.5s vs 5s. The functional predicate adds no meaningful overhead. PCSAT handles existential morphing naturally.</p>
+
+    <h3>2. PickK Strictly Improves Over Fixed-k</h3>
+    <p>Fixed-k proves <code>n &minus; 1</code> (and cannot prove <code>n &minus; 2</code>). PickK proves <code>n &minus; d0</code> for arbitrary d0 &le; n. This is a strict improvement that degrades gracefully from <code>n</code> (d0=0, no info) to <code>0</code> (d0=n, identical arrays).</p>
+
+    <h3>3. Async Scheduler Is the Entire Bottleneck</h3>
+    <p>Sync to async: 2.5s &rarr; ~3 hours (4000&times; slower). The scheduler adds 6 Horn clauses. For cost encodings with PickK, this is the dominant performance factor. Don&rsquo;t use async for deterministic-order loops.</p>
+
+    <h3>4. Extra Clauses Hurt (Replicated Finding)</h3>
+    <p>Adding a &ldquo;sound but unnecessary&rdquo; PickK fallback rule made things <strong>slower</strong>. This echoes the Dijkstra Approach A failure (15+ hours with one extra TT clause). Now replicated across two different encoding families.</p>
+    <blockquote><strong>Rule of thumb:</strong> Only add a Horn clause if it carries information the solver needs. Don&rsquo;t constrain cases that the solver handles via existential freedom.</blockquote>
+
+    <h3>5. PickK Is Genuinely Necessary for Value-Dependent Cost</h3>
+    <p>CountPositive can be proved by pure counting (&plusmn;1 per step). ConditionalCost and ArraySum <strong>cannot</strong> &mdash; cost is <code>A[i]</code>, which is unbounded without cell morphing. PickK + &epsilon; gives the per-step bound. Counting has no access to values.</p>
+
+    <h3>6. Framework Handles Diverse Cost Patterns</h3>
+    <table>
+      <thead>
+        <tr><th>Pattern</th><th>Example</th><th>Bound Shape</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Unit branch cost</td><td>CountPositive, CountInRange</td><td>n &minus; d0</td></tr>
+        <tr><td>Non-unit branch cost</td><td>ExpensiveBranch (cost &plusmn;2)</td><td>2&middot;(n &minus; d0)</td></tr>
+        <tr><td>Mutable arrays</td><td>InplaceMap (<code>A[i] = f(A[i])</code>)</td><td>n &minus; d0</td></tr>
+        <tr><td>Value-dependent cost</td><td>ConditionalCost, ArraySum</td><td>(n &minus; d0)&middot;&epsilon;</td></tr>
+        <tr><td>Different programs</td><td>Stride-1 vs Stride-2</td><td>n &minus; d0</td></tr>
+      </tbody>
+    </table>
+    <hr>
+
+    <h2>Master Results Table</h2>
+    <table>
+      <thead>
+        <tr><th>Stage</th><th>Algorithm</th><th>Mutable?</th><th>Cost/step</th><th>Bound</th><th>Vars</th><th>Result</th><th>Time</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>1</td><td>CountPositive (fixed-k)</td><td>No</td><td>&plusmn;1</td><td>n &minus; 1</td><td>7</td><td><strong>UNSAT</strong></td><td>4.5s</td></tr>
+        <tr><td>1</td><td>CountPositive (tight)</td><td>No</td><td>&plusmn;1</td><td>n &minus; 2</td><td>7</td><td>SAT</td><td>6s</td></tr>
+        <tr style="background: var(--highlight);">
+          <td>2a</td><td>CountPositive (PickK)</td><td>No</td><td>&plusmn;1</td><td>n &minus; d0</td><td>9</td><td><strong>UNSAT</strong></td><td>2.5s</td></tr>
+        <tr style="background: var(--highlight);">
+          <td>2b</td><td>ConditionalCost (PickK+&epsilon;)</td><td>No</td><td>&plusmn;&epsilon;</td><td>(n&minus;d0)&middot;&epsilon;</td><td>10</td><td><strong>UNSAT</strong></td><td>11.5s</td></tr>
+        <tr><td>Ext</td><td>CountInRange</td><td>No</td><td>&plusmn;1</td><td>n &minus; d0</td><td>9</td><td><strong>UNSAT</strong></td><td>5.0s</td></tr>
+        <tr><td>Ext</td><td>ExpensiveBranch</td><td>No</td><td>&plusmn;2</td><td>2&middot;(n&minus;d0)</td><td>9</td><td><strong>UNSAT</strong></td><td>8.2s</td></tr>
+        <tr><td>Ext</td><td>InplaceMap</td><td><strong>Yes</strong></td><td>&plusmn;1</td><td>n &minus; d0</td><td>9</td><td><strong>UNSAT</strong></td><td>30.6s</td></tr>
+        <tr><td>Ext</td><td>ConditionalCost</td><td>No</td><td>&plusmn;&epsilon;</td><td>(n&minus;d0)&middot;&epsilon;</td><td>10</td><td><strong>UNSAT</strong></td><td>11.5s</td></tr>
+        <tr><td>Ext</td><td>ArraySum (mixed)</td><td>No</td><td>&plusmn;&epsilon;</td><td>(n&minus;d0)&middot;&epsilon;</td><td>10</td><td><strong>UNSAT</strong></td><td>25s</td></tr>
+        <tr><td>Ext</td><td>Stride (epoch sync)</td><td>No</td><td>&plusmn;1</td><td>n &minus; d0</td><td>9</td><td><strong>UNSAT</strong></td><td>~3s</td></tr>
+      </tbody>
+    </table>
+
+    <div class="info-box success">
+      <strong>ALL VERIFIED</strong> &mdash; Every example returns UNSAT. Solve times range from 2.5s to 30.6s. All use the synchronized model with 5 Horn clauses. The only variation is the per-step cost model.
+    </div>
+    <hr>
+
+    <h2>Open Questions</h2>
+    <ol>
+      <li><strong>Multiple distinguished cells:</strong> Could PickK1 + PickK2 track two cells simultaneously? Would add variables but might give tighter bounds for algorithms with two interacting cost-relevant positions.</li>
+      <li><strong>Tighter bounds at HIT-unequal:</strong> For ArraySum, the HIT-unequal case could split further (both positive &rarr; tighter Lipschitz bound). Can PCSAT handle the extra cases without blowup?</li>
+      <li><strong>Non-linear cost functions:</strong> All examples have linear cost (<code>f(n&minus;d0)</code> where f is linear). What about <code>cost += A[i]&sup2;</code>? The Lipschitz constant grows, making the per-step bound less useful.</li>
+      <li><strong>Scalability to larger programs:</strong> The framework handles single-loop programs. Multi-loop or nested-loop algorithms would need multiple PickK phases or sequential cell morphing.</li>
+      <li><strong>Connection to quantitative information flow:</strong> Cost sensitivity &harr; information leakage? The d0 parameter &harr; a measure of &ldquo;how much the adversary knows.&rdquo;</li>
+    </ol>
+    <hr>
+
+    <h2>Encoding Checklist</h2>
+    <p>A practitioner&rsquo;s template for building a new PickK + prophecy cost encoding.</p>
+
+    <h3>State Variables</h3>
+    <table>
+      <thead>
+        <tr><th>Variable</th><th>Role</th><th>Notes</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>i</code></td><td>Loop counter</td><td>Sync only. Async uses <code>i1, i2</code>.</td></tr>
+        <tr><td><code>n</code></td><td>Array size</td><td>Constant, appears in goal: <code>n &le; i</code></td></tr>
+        <tr><td><code>k</code></td><td>Distinguished cell index</td><td>Chosen by PickK, 0 &le; k &lt; n</td></tr>
+        <tr><td><code>ak1, ak2</code></td><td>Cell values in runs 1, 2</td><td>Updated at HIT, unchanged at MISS</td></tr>
+        <tr><td><code>bk</code></td><td>Equality flag</td><td>1 if ak1=ak2, 0 otherwise</td></tr>
+        <tr><td><code>d</code></td><td>Discovered equal count</td><td>Increments at HIT-equal</td></tr>
+        <tr><td><code>d0</code></td><td>Prophecy parameter</td><td>Universally quantified, d0 &ge; 0</td></tr>
+        <tr><td><code>c</code></td><td>Cost difference</td><td>c = cost1 &minus; cost2</td></tr>
+        <tr><td><code>eps</code></td><td>Lipschitz bound (optional)</td><td>Only for value-dependent cost</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Required Horn Clauses (Sync)</h3>
+<pre><code>1. Init:       Inv(0, n, k, ak1, ak2, bk, 0, d0, 0) :- precondition.
+2. Transition:  Inv(primed) :- Inv(unprimed), PickK(...,kp), Wit(...),
+                  (HIT-equal or HIT-unequal or MISS), i' = i+1.
+3. Witness:     Wit(state) :- Inv(state), i &lt; n.
+4. PickK search: PickK(state, i) :- Inv(state), i &lt; n, d &lt; d0.
+5. PickK settle: PickK(state, k) :- Inv(state), d &ge; d0.
+6. Goal:        violation :- Inv(state), n &le; i, d &ge; d0.</code></pre>
+
+    <h3>Verification Checklist</h3>
+    <ol>
+      <li>State variables: all mutable vars have primed versions in transition head</li>
+      <li>Init: <code>i = 0, n &gt; 0, 0 &le; k &lt; n, d = 0, d0 &ge; 0, c = 0</code></li>
+      <li>Cell init: <code>(ak1 = ak2 and bk = 1) or (ak1 &ne; ak2 and bk = 0)</code></li>
+      <li>HIT-equal: <code>i = kp and bkp = 1</code> &rarr; c unchanged, d increments</li>
+      <li>HIT-unequal: <code>i = kp and bkp = 0</code> &rarr; c changes by per-step bound</li>
+      <li>MISS: <code>i &ne; kp</code> &rarr; c changes by worst case, cell unchanged</li>
+      <li>Cell consistency: <code>(ak1' = ak2' and bk' = 1) or (ak1' &ne; ak2' and bk' = 0)</code></li>
+      <li>PickK: exactly 2 rules (searching: kp=i when d&lt;d0, settled: kp=k when d&ge;d0)</li>
+      <li>Goal: violation formula uses <code>d &ge; d0</code> guard</li>
+      <li>If value-dependent: add <code>eps &ge; 0</code> to init, use &plusmn;eps in transitions</li>
+    </ol>
   </div>
 
   <!-- ============ SOURCE CODE PANEL ============ -->
