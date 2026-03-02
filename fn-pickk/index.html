@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Why PickK Must Be Ordinary (Not Functional)</title>
+<style>
+  :root {
+    --bg: #ffffff;
+    --surface: #f6f8fa;
+    --surface2: #eef1f5;
+    --border: #d1d9e0;
+    --text: #1f2328;
+    --text-dim: #656d76;
+    --accent: #0969da;
+    --accent2: #1a7f37;
+    --accent3: #8250df;
+    --cost: #bf8700;
+    --code-bg: #f6f8fa;
+    --tab-hover: #eef1f5;
+    --highlight: #0969da1a;
+    --amber-bg: rgba(191, 135, 0, 0.08);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+  }
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 24px 0 0;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .header-content {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 24px;
+  }
+  .header-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+  .header-sub {
+    color: var(--text-dim);
+    font-size: 0.875rem;
+    margin-bottom: 16px;
+  }
+  .tabs {
+    display: flex;
+    gap: 0;
+  }
+  .tab {
+    padding: 10px 20px;
+    cursor: pointer;
+    color: var(--text-dim);
+    font-size: 0.875rem;
+    font-weight: 500;
+    border-bottom: 2px solid transparent;
+    transition: color 0.15s, border-color 0.15s, background 0.15s;
+    user-select: none;
+    border-radius: 6px 6px 0 0;
+  }
+  .tab:hover {
+    color: var(--text);
+    background: var(--tab-hover);
+  }
+  .tab.active {
+    color: var(--text);
+    border-bottom-color: var(--cost);
+  }
+  .tab .tab-icon { margin-right: 6px; }
+
+  main {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 32px 24px 80px;
+  }
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  /* Markdown-rendered content */
+  .content h1 { font-size: 1.75rem; margin: 32px 0 16px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+  .content h1:first-child { margin-top: 0; }
+  .content h2 { font-size: 1.375rem; margin: 28px 0 12px; padding-bottom: 6px; border-bottom: 1px solid var(--border); color: var(--cost); }
+  .content h3 { font-size: 1.1rem; margin: 20px 0 8px; color: var(--accent3); }
+  .content h4 { font-size: 1rem; margin: 16px 0 8px; color: var(--text-dim); }
+  .content p { margin: 12px 0; }
+  .content strong { color: #1f2328; }
+  .content blockquote {
+    border-left: 3px solid var(--cost);
+    padding: 8px 16px;
+    margin: 12px 0;
+    background: var(--amber-bg);
+    border-radius: 0 6px 6px 0;
+    color: var(--text-dim);
+  }
+  .content ul, .content ol { margin: 8px 0 8px 24px; }
+  .content li { margin: 4px 0; }
+  .content hr { border: none; border-top: 1px solid var(--border); margin: 24px 0; }
+  .content a { color: var(--accent); text-decoration: none; }
+  .content a:hover { text-decoration: underline; }
+  .content table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 0.875rem;
+  }
+  .content table th {
+    text-align: left;
+    padding: 10px 14px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    font-weight: 600;
+    color: var(--cost);
+  }
+  .content table td {
+    padding: 10px 14px;
+    border: 1px solid var(--border);
+    vertical-align: top;
+  }
+  .content table tr:hover td { background: var(--surface); }
+  .content code {
+    background: var(--code-bg);
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 0.875em;
+    color: var(--text);
+  }
+  .content pre {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 16px;
+    overflow-x: auto;
+    margin: 12px 0;
+    font-family: 'SF Mono', 'Fira Code', Menlo, Consolas, monospace;
+    font-size: 0.8125rem;
+    line-height: 1.5;
+  }
+  .content pre code {
+    background: none;
+    padding: 0;
+    border-radius: 0;
+  }
+
+  /* Info boxes */
+  .info-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    border-radius: 0 6px 6px 0;
+    padding: 16px 20px;
+    margin: 20px 0;
+  }
+  .info-box.success { border-left-color: var(--accent2); }
+  .info-box.purple { border-left-color: var(--accent3); }
+  .info-box.amber { border-left-color: var(--cost); }
+  .info-box strong { display: block; margin-bottom: 4px; }
+
+  /* Comparison table (side-by-side) */
+  .compare-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin: 20px 0;
+  }
+  .compare-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px;
+  }
+  .compare-box h4 {
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 8px;
+  }
+  .compare-box.fail { border-left: 3px solid #cf222e; }
+  .compare-box.fail h4 { color: #cf222e; }
+  .compare-box.pass { border-left: 3px solid var(--accent2); }
+  .compare-box.pass h4 { color: var(--accent2); }
+
+  /* Causal chain */
+  .chain {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px;
+    margin: 20px 0;
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 0.8125rem;
+    line-height: 2;
+  }
+  .chain .arrow { color: var(--cost); font-weight: 700; }
+
+  /* Top navigation */
+  .topnav { border-bottom: 1px solid var(--border); font-size: 0.8rem; }
+  .topnav-content {
+    max-width: 1100px; margin: 0 auto; padding: 0 24px;
+    display: flex; align-items: center; gap: 2px; flex-wrap: wrap;
+  }
+  .topnav-home {
+    color: var(--accent); text-decoration: none; font-weight: 500;
+    padding: 8px 0; white-space: nowrap; margin-right: 8px;
+  }
+  .topnav-home:hover { text-decoration: underline; }
+  .nav-group { position: relative; }
+  .nav-group-btn {
+    background: none; border: none; cursor: pointer;
+    color: var(--text-dim); font-size: 0.8rem; padding: 8px 12px;
+    border-radius: 4px; font-family: inherit;
+    transition: color 0.15s, background 0.15s;
+  }
+  .nav-group-btn:hover, .nav-group:focus-within .nav-group-btn {
+    color: var(--text); background: var(--surface2);
+  }
+  .nav-group-btn.active { color: var(--text); font-weight: 600; }
+  .nav-dropdown {
+    display: none; position: absolute; top: 100%; left: 0;
+    background: var(--bg); border: 1px solid var(--border);
+    border-radius: 6px; padding: 4px 0; min-width: 160px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1); z-index: 200;
+  }
+  .nav-group:hover .nav-dropdown,
+  .nav-group:focus-within .nav-dropdown { display: block; }
+  .nav-dropdown a {
+    display: block; padding: 6px 16px; color: var(--text-dim);
+    text-decoration: none; white-space: nowrap;
+    transition: background 0.1s, color 0.1s;
+  }
+  .nav-dropdown a:hover { background: var(--surface); color: var(--text); }
+  .nav-dropdown a.active { color: var(--accent); font-weight: 600; background: var(--highlight); }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .tab { padding: 8px 12px; font-size: 0.8rem; }
+    main { padding: 20px 16px 60px; }
+    .header-title { font-size: 1.25rem; }
+    .compare-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="topnav">
+    <div class="topnav-content">
+      <a href="../" class="topnav-home">&larr; All Examples</a>
+      <div class="nav-group">
+        <button class="nav-group-btn">Robustness &#9662;</button>
+        <div class="nav-dropdown">
+          <a href="../isort/">Insertion Sort</a>
+          <a href="../kruskal/">Kruskal</a>
+          <a href="../dijk/">Dijkstra</a>
+          <a href="../arraymax-robust/">ArrayMax</a>
+        </div>
+      </div>
+      <div class="nav-group">
+        <button class="nav-group-btn">Sensitivity &#9662;</button>
+        <div class="nav-dropdown">
+          <a href="../histogram/">Histogram</a>
+          <a href="../cdf/">CDF</a>
+        </div>
+      </div>
+      <div class="nav-group">
+        <button class="nav-group-btn">Monotonicity &#9662;</button>
+        <div class="nav-dropdown">
+          <a href="../arraymax/">ArrayMax</a>
+          <a href="../arraysum/">ArraySum</a>
+          <a href="../kruskal-mono/">Kruskal</a>
+          <a href="../arraysum-qmono/">ArraySum (Quant.)</a>
+          <a href="../dijk-mono/">Dijkstra (vacuous)</a>
+        </div>
+      </div>
+      <div class="nav-group">
+        <button class="nav-group-btn">Commutativity &#9662;</button>
+        <div class="nav-dropdown">
+          <a href="../commutativity/">ArraySum</a>
+        </div>
+      </div>
+      <div class="nav-group">
+        <button class="nav-group-btn active">Cost &#9662;</button>
+        <div class="nav-dropdown">
+          <a href="../countpositive/">CountPositive</a>
+          <a href="../cost-ext/">Extensions</a>
+          <a href="../fn-pickk/" class="active">FN_PickK Analysis</a>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="header-content">
+    <div class="header-title">Why PickK Must Be Ordinary (Not Functional)</div>
+    <div class="header-sub">Relational Cell Morphing with PCSAT &mdash; Predicate Design Analysis</div>
+    <div class="tabs">
+      <div class="tab active" data-panel="overview" onclick="switchTab(this)">
+        <span class="tab-icon">&#128196;</span>Overview
+      </div>
+      <div class="tab" data-panel="detailed" onclick="switchTab(this)">
+        <span class="tab-icon">&#128214;</span>Detailed Analysis
+      </div>
+      <div class="tab" data-panel="comparison" onclick="switchTab(this)">
+        <span class="tab-icon">&#128269;</span>pfwCSP Comparison
+      </div>
+    </div>
+  </div>
+</header>
+
+<main>
+  <!-- ============ OVERVIEW PANEL ============ -->
+  <div id="panel-overview" class="panel active content">
+
+    <h1>PickK: Ordinary vs Functional &mdash; Why It Matters</h1>
+
+    <div class="info-box amber">
+      <strong>Key Finding</strong>
+      <code>PickK</code> must be an <strong>ordinary predicate</strong>, not a functional predicate (<code>FN_PickK</code>).
+      When we tested <code>FN_PickK</code>, verification <em>fails</em> (SAT) on problems where ordinary <code>PickK</code>
+      <em>succeeds</em> (UNSAT). This page explains why.
+    </div>
+
+    <div class="info-box">
+      <strong>Prerequisite</strong>
+      This page assumes familiarity with the PickK + prophecy mechanism from the
+      <a href="../countpositive/">CountPositive tutorial</a> (Stage 2b).
+      If you haven't seen PickK before, start there.
+    </div>
+
+    <h2>What PickK Does</h2>
+
+    <p>Cell morphing tracks one distinguished array cell <code>k</code> through two parallel
+    program executions. <code>PickK</code> re-selects which cell to track at each loop iteration,
+    enabling the proof to "inspect" multiple positions:</p>
+
+    <pre><code>PickK(state, kp)   &mdash; "at this state, the proof focuses on cell kp"</code></pre>
+
+    <p>Two defining clauses pin its behavior:</p>
+
+    <pre><code>(* Searching: when we haven't yet found d0 equal positions, inspect position i *)
+PickK(state, i) :- Inv(state), i &lt; n, d &lt; d0.
+
+(* Settled: when prophecy fulfilled, keep current cell *)
+PickK(state, k) :- Inv(state), d &gt;= d0.</code></pre>
+
+    <p><code>PickK</code> is consumed in the transition clause:</p>
+
+    <pre><code>Inv(state') :- Inv(state), PickK(state, kp), ...(transition logic)...</code></pre>
+
+    <h2>The d / d0 Connection</h2>
+
+    <p>The prophecy variable <strong>d0</strong> represents a promise: "the two arrays share at
+    least d0 equal positions." The counter <strong>d</strong> tracks how many equal positions
+    the proof has discovered so far. The cost bound we prove is <strong>c &le; n &minus; d0</strong>.</p>
+
+    <p><strong>PickK is the mechanism that makes d grow toward d0.</strong></p>
+
+    <pre><code>Step i: PickK says kp = i (searching, since d &lt; d0).
+        The transition must handle i = kp (a HIT):
+          A1[i] = A2[i]?  YES &rarr; HIT-equal:   c' = c,     d' = d + 1  &larr; d grows!
+                           NO  &rarr; HIT-unequal: c' = c + 1, d' = d
+
+Step i+1: If d still &lt; d0, PickK says kp = i+1. Another inspection.
+
+...continue until d reaches d0...
+
+Step j (d = d0): PickK switches to kp = k (settled).
+        Most steps are MISS: c' = c + 1, d' = d.
+
+At termination (i = n):
+  d &ge; d0 (prophecy fulfilled)
+  c &le; (n - d0): the d0 HIT-equal steps had cost 0, rest had cost 1.</code></pre>
+
+    <h2>The Experiment</h2>
+
+    <div class="compare-grid">
+      <div class="compare-box pass">
+        <h4>Ordinary PickK</h4>
+        <p>Keep both defining clauses. <code>PickK</code> is an ordinary predicate.</p>
+        <p><strong>Result: UNSAT in 2.5s</strong></p>
+        <p style="color: var(--accent2);">Verification succeeds &mdash; cost bound <code>c &le; n - d0</code> is proved.</p>
+      </div>
+      <div class="compare-box fail">
+        <h4>Functional FN_PickK</h4>
+        <p>Remove defining clauses. Rename to <code>FN_PickK</code> (functional predicate).</p>
+        <p><strong>Result: SAT</strong></p>
+        <p style="color: #cf222e;">Verification fails &mdash; solver finds a lazy strategy that defeats the bound.</p>
+      </div>
+    </div>
+
+    <h2>Why FN_PickK Fails</h2>
+
+    <p>As a <strong>functional predicate</strong>, PCSAT has an existential reading:
+    "find ONE function <code>kp = f(state)</code> that makes the invariant work."
+    PCSAT discovers the <strong>lazy strategy</strong> <code>kp = k</code> (always keep current cell, never search):</p>
+
+    <ul>
+      <li>Position <code>i</code> is never inspected (no HIT at position <code>i</code>)</li>
+      <li>Counter <code>d</code> never increments (no equal positions discovered)</li>
+      <li>The bound degrades to <code>c &le; n</code> (trivial, since <code>d0</code> effectively = 0)</li>
+      <li>Goal <code>c &gt; n - d0</code> becomes satisfiable for small <code>d0</code></li>
+    </ul>
+
+    <p><strong>Ordinary PickK</strong> gives a <em>universal</em> reading: "the invariant must work for ALL
+    <code>kp</code> values the defining clauses require, including <code>kp = i</code> during searching."
+    This forces <code>Inv</code> to handle the hard cases that make <code>d</code> grow.</p>
+
+    <h2>The Causal Chain</h2>
+
+    <div class="chain">
+      Searching clause forces kp = i<br>
+      &nbsp;&nbsp;<span class="arrow">&rarr;</span> Transition must handle HIT case (i = kp)<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;<span class="arrow">&rarr;</span> HIT-equal increments d<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="arrow">&rarr;</span> d grows toward d0<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="arrow">&rarr;</span> At termination, d &ge; d0 is achievable<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="arrow">&rarr;</span> Only n &minus; d0 steps paid worst-case cost<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="arrow">&rarr;</span> <strong>Tight bound c &le; n &minus; d0</strong>
+    </div>
+
+    <p>Remove any link and the chain breaks.</p>
+
+  </div>
+
+  <!-- ============ DETAILED ANALYSIS PANEL ============ -->
+  <div id="panel-detailed" class="panel content">
+
+    <h1>The Two-Sided Squeeze Mechanism</h1>
+
+    <p>PickK as an ordinary predicate creates a <strong>squeeze between lower and upper bounds</strong>:</p>
+
+    <pre><code>LOWER BOUND (defining clauses, PickK in head):
+  "PickK MUST include (state, i) when d &lt; d0"     &mdash; forces searching
+  "PickK MUST include (state, k) when d &gt;= d0"     &mdash; allows settling
+
+UPPER BOUND (transition clause, PickK in body):
+  "For ALL (state, kp) in PickK, the invariant must be preserved"</code></pre>
+
+    <p>The lower bound forces the proof to handle the <strong>searching case</strong> (<code>kp = i</code>).
+    This means the invariant must account for:</p>
+
+    <ol>
+      <li>Inspecting position <code>i</code> and finding equality &rarr; <code>d</code> increments (HIT-equal)</li>
+      <li>Inspecting position <code>i</code> and finding inequality &rarr; <code>c</code> increments (HIT-unequal)</li>
+      <li>Position <code>i</code> is not the current <code>kp</code> &rarr; <code>c</code> increments (MISS)</li>
+    </ol>
+
+    <p>This case analysis, forced by the lower bound, is what produces the tight
+    bound: after <code>n</code> steps, <code>d &ge; d0</code> positions were HIT-equal (cost 0 each), and
+    at most <code>n &minus; d0</code> were HIT-unequal or MISS (cost 1 each), giving <strong>c &le; n &minus; d0</strong>.</p>
+
+    <hr>
+
+    <h2>Encoding Pattern</h2>
+
+    <p>The standard PickK encoding in sync model (5&ndash;6 clauses):</p>
+
+    <pre><code>(* 1. Init *)
+Inv(state) :- initial conditions, d = 0, d0 &gt;= 0, c = 0.
+
+(* 2. Transition &mdash; PickK in BODY *)
+Inv(state') :- Inv(state), i &lt; n,
+    PickK(state, kp), Wit(i, n, kp, ak1p, ak2p, bkp, ...),
+    (HIT-equal:   i=kp, bkp=1, c'=c,   d'=d+1) or
+    (HIT-unequal: i=kp, bkp=0, c'=c+1, d'=d) or
+    (MISS:        i&lt;&gt;kp,       c'=c+1, d'=d),
+    ... bk maintenance ...
+
+(* 3. Wit &mdash; provides fresh cell values *)
+Wit(state) :- Inv(state), i &lt; n.
+
+(* 4. PickK searching &mdash; forces inspection, drives d toward d0 *)
+PickK(state, i) :- Inv(state), i &lt; n, d &lt; d0.
+
+(* 5. PickK settled &mdash; keeps current cell after prophecy fulfilled *)
+PickK(state, k) :- Inv(state), d &gt;= d0.
+
+(* 6. Goal &mdash; violation unreachable *)
+c &gt; n - d0 :- Inv(state), n &lt;= i, d &gt;= d0.</code></pre>
+
+    <div class="info-box amber">
+      <strong>The Critical Test</strong>
+      Removing clauses 4 and 5 and renaming to <code>FN_PickK</code>: <strong>SAT (fails).</strong><br>
+      All 6 clauses with ordinary PickK: <strong>UNSAT in 2.5s (verifies).</strong>
+    </div>
+
+    <hr>
+
+    <h2>PickK vs Scheduler: Structural Analogy</h2>
+
+    <p>PickK and the scheduler predicates (<code>SchTF</code>, <code>SchFT</code>, <code>SchTT</code>) from the
+    CAV 2021 paper share the same structural pattern: ordinary predicates squeezed
+    between lower and upper bounds.</p>
+
+    <h3>Scheduler Structure</h3>
+
+    <pre><code>LOWER BOUND (head disjunction + fairness):
+  SchTF(s), SchFT(s), SchTT(s) :- Inv(s), prog1_active or prog2_active.
+  z1 &gt; 0 :- Inv(s), SchTF(s), z2 &gt; 0.    (* fairness *)
+
+UPPER BOUND (transition clauses):
+  Inv(s') :- Inv(s), SchTF(s), T1(s1, s1'), s2' = s2.
+  Inv(s') :- Inv(s), SchFT(s), T2(s2, s2'), s1' = s1.
+  Inv(s') :- Inv(s), SchTT(s), T1(s1, s1'), T2(s2, s2').</code></pre>
+
+    <h3>PickK Structure</h3>
+
+    <pre><code>LOWER BOUND (defining clauses):
+  PickK(s, i) :- Inv(s), i &lt; n, d &lt; d0.   (* searching *)
+  PickK(s, k) :- Inv(s), d &gt;= d0.          (* settled *)
+
+UPPER BOUND (transition clause):
+  Inv(s') :- Inv(s), PickK(s, kp), Wit(...), transition_logic.</code></pre>
+
+    <h3>Side-by-Side Comparison</h3>
+
+    <table>
+      <thead>
+        <tr>
+          <th></th>
+          <th>Scheduler</th>
+          <th>PickK</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Decides</strong></td>
+          <td>Which program copy steps</td>
+          <td>Which array cell to inspect</td>
+        </tr>
+        <tr>
+          <td><strong>Lower bound</strong></td>
+          <td>Disjunction + fairness</td>
+          <td>Defining clauses</td>
+        </tr>
+        <tr>
+          <td><strong>Lower bound says</strong></td>
+          <td>"At least one copy must progress if any can"</td>
+          <td>"Position i must be inspected during searching (d &lt; d0)"</td>
+        </tr>
+        <tr>
+          <td><strong>Upper bound</strong></td>
+          <td>Transition clauses</td>
+          <td>Transition clause</td>
+        </tr>
+        <tr>
+          <td><strong>Squeeze forces</strong></td>
+          <td>Inv handles both copies' progress fairly</td>
+          <td>Inv handles HIT at each position &rarr; d grows &rarr; tight bound</td>
+        </tr>
+        <tr>
+          <td><strong>Without lower bound</strong></td>
+          <td>Trivial schedule (always TT) &rarr; may fail</td>
+          <td>Trivial cell (always k) &rarr; d stuck at 0 &rarr; bound trivial</td>
+        </tr>
+        <tr>
+          <td><strong>Kind in pfwCSP</strong></td>
+          <td>Ordinary (&bull;)</td>
+          <td>Ordinary (&bull;)</td>
+        </tr>
+        <tr>
+          <td><strong>Why not functional</strong></td>
+          <td>Fairness needs disjunctive coverage of all modes</td>
+          <td>Searching needs forced HITs to drive d toward d0</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <hr>
+
+    <h2>The Key Analogy</h2>
+
+    <div class="compare-grid">
+      <div class="compare-box" style="border-left: 3px solid var(--accent);">
+        <h4 style="color: var(--accent);">Scheduler Fairness</h4>
+        <p>"You cannot starve a program &mdash; if it can run, eventually it must run."</p>
+        <p>Forces <code>Inv</code> to handle progress by both programs.</p>
+      </div>
+      <div class="compare-box" style="border-left: 3px solid var(--cost);">
+        <h4 style="color: var(--cost);">PickK Searching</h4>
+        <p>"You cannot skip inspection &mdash; during searching phase (d &lt; d0),
+        each position i must be examined to discover equal positions."</p>
+        <p>Forces <code>Inv</code> to handle HITs that drive d toward d0.</p>
+      </div>
+    </div>
+
+    <h3>One Structural Difference in Lower Bounds</h3>
+
+    <div class="compare-grid">
+      <div class="compare-box" style="border-left: 3px solid var(--accent);">
+        <h4 style="color: var(--accent);">Scheduler: Disjunctive</h4>
+        <pre><code>SchTF(s), SchFT(s), SchTT(s) :- Inv(s), progress.</code></pre>
+        <p>"At least one of these predicates must contain this state."</p>
+        <p>&rarr; Disjunctive lower bound: at least one mode applies.</p>
+      </div>
+      <div class="compare-box" style="border-left: 3px solid var(--cost);">
+        <h4 style="color: var(--cost);">PickK: Conjunctive</h4>
+        <pre><code>PickK(s, i) :- Inv(s), searching.
+PickK(s, k) :- Inv(s), settled.</code></pre>
+        <p>"PickK must contain BOTH kinds of tuples."</p>
+        <p>&rarr; Conjunctive lower bound: both modes' tuples are included.</p>
+      </div>
+    </div>
+
+    <p>This makes PickK's constraint <strong>stronger</strong>: the invariant must simultaneously
+    handle all searching tuples AND all settled tuples. The scheduler only
+    requires at least one mode to apply per state.</p>
+
+    <div class="info-box purple">
+      <strong>PickK is a scheduler for the proof, not for the programs.</strong>
+      Just as <code>SchTF</code> decides "which program steps next," PickK decides "which cell
+      the proof inspects next." And just as scheduler fairness clauses prevent starving
+      any program, PickK's searching clause prevents skipping the inspection phase
+      that is essential for discovering equal positions and achieving a tight bound.
+    </div>
+
+  </div>
+
+  <!-- ============ PFWCSP COMPARISON PANEL ============ -->
+  <div id="panel-comparison" class="panel content">
+
+    <h1>Where PickK Fits in pfwCSP</h1>
+
+    <p>PickK is a novel use of ordinary predicates that doesn't fit cleanly into
+    the existing pfwCSP categories:</p>
+
+    <ul>
+      <li>It is <strong>NOT</strong> a scheduler (it doesn't control which program copy steps)</li>
+      <li>It is <strong>NOT</strong> a pure Skolem function (it has defining clauses that impose
+      proof obligations, so it cannot be a functional predicate)</li>
+      <li>It <strong>IS</strong> a <em>proof strategy predicate</em>: it specifies which cell to track,
+      and its defining clauses ensure the invariant accounts for the tracking</li>
+    </ul>
+
+    <h2>Predicate Kind Comparison</h2>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Predicate</th>
+          <th>Kind</th>
+          <th>Role</th>
+          <th>Why this kind?</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>Inv</code></td>
+          <td>Ordinary (&bull;)</td>
+          <td>Relational invariant</td>
+          <td>Standard</td>
+        </tr>
+        <tr>
+          <td><code>SchTF/FT/TT</code></td>
+          <td>Ordinary (&bull;)</td>
+          <td>Scheduler</td>
+          <td>Constrained by fairness (disjunction + liveness)</td>
+        </tr>
+        <tr>
+          <td><code>FN_DB</code></td>
+          <td>Functional (&lambda;)</td>
+          <td>Difference bound</td>
+          <td>Pure Skolem function, freely chosen</td>
+        </tr>
+        <tr>
+          <td><code>FN_R</code></td>
+          <td>Functional (&lambda;)</td>
+          <td>Angelic ND resolver</td>
+          <td>Pure Skolem function, freely chosen</td>
+        </tr>
+        <tr>
+          <td><code>WF_R</code></td>
+          <td>Well-founded (&darr;)</td>
+          <td>Termination witness</td>
+          <td>Must be well-founded</td>
+        </tr>
+        <tr style="background: var(--amber-bg);">
+          <td><strong><code>PickK</code></strong></td>
+          <td><strong>Ordinary (&bull;)</strong></td>
+          <td><strong>Cell selection</strong></td>
+          <td><strong>Defining clauses force searching &rarr; d grows &rarr; tight bound</strong></td>
+        </tr>
+        <tr style="background: var(--amber-bg);">
+          <td><strong><code>Wit</code></strong></td>
+          <td><strong>Ordinary (&bull;)</strong></td>
+          <td><strong>Fresh cell values</strong></td>
+          <td><strong>Provides witness domain for refocused cell</strong></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2>Why PickK Differs from FN_R and FN_DB</h2>
+
+    <div class="info-box amber">
+      <strong>The fundamental distinction</strong>
+      <code>FN_R</code> and <code>FN_DB</code> are <strong>pure existential witnesses</strong> &mdash; the solver freely chooses
+      their values. <code>PickK</code> has <strong>defining clauses that impose structural proof obligations</strong>.
+      These obligations force <code>Inv</code> to handle HIT cases that increment <code>d</code>.
+      This is what makes the cost bound tight (<code>n - d0</code> instead of trivial <code>n</code>).
+    </div>
+
+    <h3>Existential vs Constrained</h3>
+
+    <div class="compare-grid">
+      <div class="compare-box" style="border-left: 3px solid var(--accent3);">
+        <h4 style="color: var(--accent3);">Functional (FN_R, FN_DB)</h4>
+        <p>Solver picks any function <code>f(state) &rarr; value</code> that satisfies the transition.</p>
+        <p>No defining clauses. No proof obligations beyond making transitions work.</p>
+        <p><strong>Existential:</strong> &exist; f such that Inv is preserved.</p>
+      </div>
+      <div class="compare-box" style="border-left: 3px solid var(--cost);">
+        <h4 style="color: var(--cost);">Ordinary (PickK)</h4>
+        <p>Defining clauses force specific tuples to be included. Transition must handle ALL included tuples.</p>
+        <p>Lower bound clauses create proof obligations the invariant MUST satisfy.</p>
+        <p><strong>Universal:</strong> &forall; kp in PickK, Inv must be preserved.</p>
+      </div>
+    </div>
+
+    <hr>
+
+    <h2>What This Means for Future Encodings</h2>
+
+    <p>When designing new relational cost encodings with PickK:</p>
+
+    <ol>
+      <li><strong>Always use ordinary PickK</strong>, never functional <code>FN_PickK</code></li>
+      <li><strong>Always include both defining clauses</strong> (searching + settled)</li>
+      <li>The searching clause (<code>PickK(state, i) :- d &lt; d0</code>) is what drives the
+      proof &mdash; without it, the bound degrades to trivial</li>
+      <li>Think of PickK as a <strong>proof scheduler</strong>: it tells PCSAT which positions
+      the proof must inspect to discover equal elements</li>
+    </ol>
+
+    <div class="info-box success">
+      <strong>Rule of Thumb</strong>
+      If a predicate has <strong>defining clauses that create proof obligations</strong>, it must be
+      ordinary (&bull;). Functional (&lambda;) is only appropriate for <strong>pure Skolem functions</strong>
+      where the solver freely chooses values with no structural constraints.
+    </div>
+
+  </div>
+
+</main>
+
+<script>
+// Tab switching
+function switchTab(el) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('panel-' + el.dataset.panel).classList.add('active');
+}
+</script>
+
+</body>
+</html>
